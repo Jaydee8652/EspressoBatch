@@ -4,6 +4,7 @@ To activate, run the following commands:
 
 ```
 $ git clone https://github.com/Jaydee8652/EspressoBatch.git
+$ cd EspressoBatch
 $ pip install -r requirements.txt
 $ module load scipy-stack
 ```
