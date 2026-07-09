@@ -9,6 +9,7 @@ $ module load scipy-stack
 ```
 
 In utils.git_utils:
+
 -Replace 'REPO' with the name of a github repository you control
 -Replace 'github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000' with an auth token that has read and write permissions on said repo
 
