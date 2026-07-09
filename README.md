@@ -15,5 +15,7 @@ In utils.git_utils:
 -Replace 'github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000' with an auth token that has read and write permissions on said repo
 
 Use:
+
 Run cif_sort.py first, this will create the Original_CIFs file and request structure_data.csv, both can be obained from the CSD.
+
 Run qe_cif2cell.py to generate quantum-espresso input files.
