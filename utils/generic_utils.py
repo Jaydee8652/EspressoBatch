@@ -4,8 +4,7 @@ import csv
 import datetime
 import time
 import os
-
-
+import shutil
 
 logs = os.path.join(os.getcwd(), "logs")
 if not os.path.exists(logs):
@@ -26,7 +25,7 @@ def createDirectory(log, path, text, exit):
         printToLog(log, text + " ["+ path + "]")
         os.makedirs(path)
         if exit:
-            sys.exit()
+            quit()
 
 #Remove directory is it exists
 def removeDirectory(log, path, text):

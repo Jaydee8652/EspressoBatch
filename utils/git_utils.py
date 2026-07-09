@@ -8,7 +8,6 @@ from github import Github
 import __main__ as main
 import os
 import subprocess
-import sys
 import re 
 import pandas as pd
 import io
@@ -18,12 +17,12 @@ import time
 from utils.generic_utils import *
 
 # Params - can be changed
-location = "Rorqual"
-
+location = "Somewhere?" #Name of the cluster
 REPO = 'REPO_NAME' #eg 'ExampleRepo' for https://github.com/Jaydee8652/ExampleRepo 
+auth = Auth.Token("github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000") #Must have permissions on repo 
+
 sheetPath = 'sheet.csv'
 flagPath = 'sheet_flag.txt'
-auth = Auth.Token("github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000") #Must have permissions on repo 
 
 # Git Authentication
 g = Github(auth=auth)
