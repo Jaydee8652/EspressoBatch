@@ -61,7 +61,7 @@ cifFiles = [file for file in os.listdir(validatedPath) if file.endswith('.cif') 
 numberOfCifs = len(cifFiles) # determine number of .cif files
 if numberOfCifs == 0:#Make sure there are .cifs in the directory
     printToLog("# WARN - No .cif files found to process. Place .cif files in ["+ validatedPath + "]")
-    sys.exit()
+    quit()
 else:
     printToLog("# INFO - " + str(numberOfCifs) + " .cif files found at ["+ validatedPath + "]")
 
@@ -70,7 +70,7 @@ numberOfPsueds = len(pseudosFiles) # determine number of .UPF files
 psuedoElements = list()
 if numberOfPsueds == 0:#Make sure there are .UPFs in the directory
     printToLog("# WARN - No .UPF files found. Place .UPF files in ["+ pseudosPath + "]")
-    sys.exit()
+    quit()
 else:
     printToLog("# INFO - " + str(numberOfPsueds) + " .UPF files found at ["+ pseudosPath + "]")
 
@@ -88,7 +88,7 @@ if os.path.exists(structureDataPath):
     df.set_index('[REFCODE]', inplace = True)
 else:
     printToLog("# WARN - No .csv file found to load compound data. Copy .csv from the CSD to the following path ["+ structureDataPath + "]")
-    sys.exit()
+    quit()
 
 # Input sanitisation
 regex = re.compile('[^a-zA-Z ]')
@@ -221,7 +221,7 @@ for cif in cifFiles:
                     printToLog("# WARN - No .UPF file found for atom ["+str(lineAtom.lstrip())+"], needed by compound ["+refcode+"]")
                     shutil.rmtree(refcodeDirectory)
                     failureCount += 1    
-                    sys.exit()# Deliberate crash if a pseudopotential is not available for all atom types required
+                    quit()# Deliberate crash if a pseudopotential is not available for all atom types required
                 else:
                     for pseudo in pseudosFiles:
                         if lineAtom+'.' in pseudo and 'kjpaw' in pseudo:

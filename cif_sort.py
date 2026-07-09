@@ -51,21 +51,18 @@ printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INF
 pathToSort = os.path.join(homeDirectory, "Original_CIFs")
 createDirectory(pathToSort, "# WARN - No directory found for .cifs to sort. Place .cif files in or replace the newly created directory at", True)
 
-cifFiles = [file for file in os.listdir(pathToSort) if file.endswith('.cif') and os.path.isfile(os.path.join(pathToSort, file))]#Get .cifs from directory
-numberOfCifs = len(cifFiles)
+
+cifs = {os.path.splitext(file)[0].replace(".cif", ""): file for file in os.listdir(pathToSort) if file.endswith('.cif') and os.path.isfile(os.path.join(pathToSort, file))}
+
+print(str(cifs))
+numberOfCifs = len(cifs)
 survivingStructures = numberOfCifs
 
 if numberOfCifs == 0:#Make sure there are .cifs in the directory
     printToLog("# WARN - No .cif files found to sort. Place .cif files in ["+ pathToSort + "]")
-    sys.exit()
+    quit()
 else:
     printToLog("# INFO - " + str(numberOfCifs) + " .cif files found at ["+ pathToSort + "]")
-
-cifDict = {}
-for file in cifFiles:#Put cifs into a dict for easy access
-    fileName = os.path.splitext(file)[0]
-    fileName = fileName.replace(".cif", "")#Cull extraneous file name data. Only necessary if the files were saved from CSD weirdly
-    cifDict[fileName] = file
 
 #Make sure there is a directory for PSEUDOS
 pseudosPath = os.path.join(homeDirectory, "PSEUDOS/")
@@ -76,7 +73,7 @@ numberOfPsueds = len(pseudosFiles) # determine number of .UPF files
 psuedoElements = list()
 if numberOfPsueds == 0:#Make sure there are .UPFs in the directory
     printToLog("# WARN - No .UPF files found. Place .UPF files in ["+ pseudosPath + "]")
-    sys.exit()
+    quit()
 else:
     printToLog("# INFO - " + str(numberOfPsueds) + " .UPF files found at ["+ pseudosPath + "]")
 
@@ -85,148 +82,142 @@ else:
 
 #Make sure there are directories to put the sorted files
 cifPath = os.path.join(homeDirectory, "cifs")
-createDirectory(cifPath, "# INFO - No file found storing .cifs, created at", False)
+createDirectory(cifPath, "# INFO - No directory found for storing .cifs, created at", False)
 
 #Make sure there are directories to put the sorted files
 validatedPath = os.path.join(cifPath, "Validated_CIFs")
-createDirectory(validatedPath, "# INFO - No file found for validated .cifs, created at", False)
+createDirectory(validatedPath, "# INFO - No directory found for validated .cifs, created at", False)
 
 discardedPath = os.path.join(cifPath, "Discarded_CIFs")
-createDirectory(discardedPath, "# INFO - No file found for discarded .cifs, created at", False)
+createDirectory(discardedPath, "# INFO - No directory found for discarded .cifs, created at", False)
 
 structureFormulaMismatchPath = os.path.join(discardedPath, "StructureFormulaMismatched_CIFs")
-createDirectory(structureFormulaMismatchPath, "# INFO - No file found for structure-formula mismatched .cifs, created at", False)
+createDirectory(structureFormulaMismatchPath, "# INFO - No directory found for structure-formula mismatched .cifs, created at", False)
 
 noStructureDataPath = os.path.join(discardedPath, "NoStructureData_CIFs")
-createDirectory(noStructureDataPath, "# INFO - No file found for empty .cifs, created at", False)
+createDirectory(noStructureDataPath, "# INFO - No directory found for empty .cifs, created at", False)
 
 noHydrogenDataPath = os.path.join(discardedPath, "NoHydrogenData_CIFs")
-createDirectory(noHydrogenDataPath, "# INFO - No file found for .cifs with no hydrogen data, created at", False)
+createDirectory(noHydrogenDataPath, "# INFO - No directory found for .cifs with no hydrogen data, created at", False)
 
 incompleteHydrogenDataPath = os.path.join(discardedPath, "IncompleteHydrogenData_CIFs")
-createDirectory(incompleteHydrogenDataPath, "# INFO - No file found for .cifs with incomplete hydrogen data, created at", False)
+createDirectory(incompleteHydrogenDataPath, "# INFO - No directory found for .cifs with incomplete hydrogen data, created at", False)
 
 unaccountedElementsPath = os.path.join(discardedPath, "UnaccountedElements_CIFs")
-createDirectory(unaccountedElementsPath, "# INFO - No file found for .cifs with unaccounted element types, created at", False)
+createDirectory(unaccountedElementsPath, "# INFO - No directory found for .cifs with unaccounted element types, created at", False)
 
 #Make sure there is a .csv to read from
 structureDataPath = os.path.join(homeDirectory, "structure_data.csv")
 if not os.path.exists(structureDataPath):
     printToLog("# WARN - No .csv file found to load compound data. Copy .csv from the CSD to the following path ["+ structureDataPath + "]")
-    sys.exit()
+    quit()
 
-with open("structure_data.csv","r", encoding="utf-8-sig") as fileCSV:#Open accompanying .csv - Obtained from CSD
-    readCSV = csv.DictReader(fileCSV)
-    for line in readCSV:
-        refcode = str(line["[REFCODE]"])
-        cellVolume = float(line["[_cell_volume]"])
-        rcellVolume = float(line["[_rcell_volume]"])
-        rFactor = float(line["[_refine_ls_R_factor]"])
-        disorder = line["[_exptl_DISORDER]"]
+df = pd.read_csv(structureDataPath, encoding="utf-8-sig")
+df.set_index('[REFCODE]', inplace = True)
 
-        printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
-        if not cifDict.__contains__(refcode):#Warn if there is data but no .cif
-            printToLog("# WARN - No .cif file found for structure with refcode [" + refcode + "]")
-        else:
-            fileName = cifDict.get(refcode)
-            with open(os.path.join(pathToSort, fileName), "r") as cif:
-                printToLog("# INFO - Processing .cif file for compound with refcode [" + refcode + "]")
-                formulaDict = {}
-                workingDict = {}
-                expl = ""
-                
-                for line in cif:
-                    line = line.strip()
-                    if len(line) == 0 or line.startswith("#"):
-                        if "#Symmetry data" in line:                        
-                            appended = True
-                        else:
-                            continue#   skip blank lines and comments
-                    if m := re.match(r"_?(\w+)\s+(.*)", line):
-                        key = m.group(1)
-                        value = m.group(2)
-                        
-                        if key.startswith("chemical_formula_sum"):
-                            formula = value.strip("\'")
-                            printToLog("# INFO - Compound [" + refcode + "] found to have formula ["+ formula +"]")
-                            regex = re.compile('[^a-zA-Z ]')
-                            atoms = regex.sub('', formula).strip().split(" ")
-                            atoms = list(set([atom.lower().capitalize() for atom in atoms]))
+for refcode, filename in cifs.items():
+    printToLog("# INFO - Compound ["+ refcode +"] Looking for structure_data.csv entry")
+    if not refcode in df.index:
+        printToLog("# WARN - Compound [" + refcode + "] Not present in structure_data.csv")
+        survivingStructures -= 1
+        continue
+    else:
+        expl = ""
 
-                            unaccounted = []
-                            printToLog("# INFO - Compound [" + refcode + "] found to contain the following atom types: ["+ str(atoms) +"]")
-                            for atom in atoms:
-                                if not psuedoElements.__contains__(atom):
-                                    unaccounted.append(atom)
-                                    #printToLog("# WARN - Compound [" + refcode + "] found to contain atom not accounted for by .UPF files: ["+ str(atom) +"]")
-                                    if atom in unaccountedElements:
-                                        unaccountedElements[atom] += 1
-                                    else:
-                                        unaccountedElements[atom] = 1
-                            formula = formula.split()
-                            for element in formula:#Save formula to a dict
-                                formulaDict[re.findall('\\d+|\\D+', element)[0]] = int(re.findall('\\d+|\\D+', element)[1])
-                            workingDict = formulaDict.copy()
-                        else:
-                            elementSymbolLine = re.findall('\\d+|\\D+', value)[0].strip(" -")
-                            if "?" in value and expl == "":
-                                expl = expl + "Disordered [" + str(value) + "]"
-                            elif workingDict.__contains__(elementSymbolLine):
-                                workingDict[elementSymbolLine] -= 1#Increment a copy of the formula dict for every corresponding atom position, counts down for convenience
-                                
-                #Generate explanation for discard
-                if cellVolume > volumeCap:
-                    expl = expl + "Cell Volume [" + str(cellVolume) + "] greater than volume cap [" + str(volumeCap) + "]"
-                if rFactor > rCap:
-                    if not expl == "":
-                        expl += " & "
-                    expl = expl + "R factor [" + str(rFactor) + "] greater than cutoff point [" + str(rCap) + "]"
-                if not disorder == "":
-                    if not expl == "":
-                        expl += " & "
-                    expl = expl + "Disordered [" + str(disorder) + "]"
-    
-                #Filter by volume, r factor and disorder
-                if not expl == "":
-                    shutil.copyfile(os.path.join(pathToSort, fileName), os.path.join(discardedPath, refcode + ".cif"))
-                    printToLog("# INFO - Compound [" + refcode + "] discarded. " + expl)
-                    csvFilterCount += 1
-                    survivingStructures -= 1
-                    continue
-                if not all(workingDict.get(key) % formulaDict.get(key) == 0 and not workingDict.get(key) == formulaDict.get(key) for key in formulaDict):#If the formula doesn't equal 0 (All atoms accounted for), or a negative multiple (Symmetry equivalent), discard TODO: Cannot account for co-crytsals.
-                    if all(workingDict.get(key) == formulaDict.get(key) for key in formulaDict):
-                        printToLog("# INFO - Compound [" + refcode + "] discarded. No structural data, all atoms unaccounted for: ["+ str(workingDict) +"]")
-                        shutil.copyfile(os.path.join(pathToSort, fileName), os.path.join(noStructureDataPath, refcode + ".cif"))
+        #Generate explanation for discard
+        cellVolume = float(df.at[refcode, "[_cell_volume]"])
+        if cellVolume > volumeCap:
+            expl = expl + "Cell Volume [" + str(cellVolume) + "] greater than volume cap [" + str(volumeCap) + "]"
+        rFactor = float(df.at[refcode, "[_refine_ls_R_factor]"])
+        if rFactor > rCap:
+            if not expl == "":
+                expl += " & "
+            expl = expl + "R factor [" + str(rFactor) + "] greater than cutoff point [" + str(rCap) + "]"
+        disorder = str(df.at[refcode, "[_exptl_DISORDER]"])
+        if not disorder == "nan":
+            if not expl == "":
+                expl += " & "
+            expl = expl + "Disordered [" + str(disorder) + "]"
 
-                        noStructureDataCount += 1
-                    elif (workingDict.get("H") == formulaDict.get("H")):
-                        printToLog("# INFO - Compound [" + refcode + "] discarded. No hydrogen data, unaccounted for atoms: ["+ str(workingDict) +"]")
-                        shutil.copyfile(os.path.join(pathToSort, fileName), os.path.join(noHydrogenDataPath, refcode + ".cif"))
+        #Filter by volume, r factor and disorder
+        if not expl == "":
+            shutil.copyfile(os.path.join(pathToSort, filename), os.path.join(discardedPath, refcode + ".cif"))
+            printToLog("# INFO - Compound [" + refcode + "] discarded. " + expl)
+            csvFilterCount += 1
+            survivingStructures -= 1
+            continue
+        
+        with open(os.path.join(pathToSort, filename), "r") as cif:
+            printToLog("# INFO - Compound [" + refcode + "] Processing .cif file")
+            formulaDict = {}
+            workingDict = {}
+            
+            for line in cif:
+                line = line.strip()
 
-                        noHydrogenDataCount += 1
-                    elif all(workingDict.get(key) == 0 or key == "H" for key in formulaDict):
-                        printToLog("# INFO - Compound [" + refcode + "] discarded. Incomplete hydrogen data, unaccounted for atoms: ["+ str(workingDict) +"]")
-                        shutil.copyfile(os.path.join(pathToSort, fileName), os.path.join(incompleteHydrogenDataPath, refcode + ".cif"))
+                if m := re.match(r"_?(\w+)\s+(.*)", line):
+                    key = m.group(1)
+                    value = m.group(2)
+                    
+                    if key.startswith("chemical_formula_sum"):
+                        formula = value.strip("\'")
+                        printToLog("# INFO - Compound [" + refcode + "] found to have formula ["+ formula +"]")
+                        regex = re.compile('[^a-zA-Z ]')
+                        atoms = regex.sub('', formula).strip().split(" ")
+                        atoms = list(set([atom.lower().capitalize() for atom in atoms]))
 
-                        incompleteHydrogenDataCount += 1
+                        unaccounted = []
+                        printToLog("# INFO - Compound [" + refcode + "] found to contain the following atom types: ["+ str(atoms) +"]")
+                        for atom in atoms:
+                            if not psuedoElements.__contains__(atom):
+                                unaccounted.append(atom)
+                                if atom in unaccountedElements:
+                                    unaccountedElements[atom] += 1
+                                else:
+                                    unaccountedElements[atom] = 1
+                        formula = formula.split()
+                        for element in formula:#Save formula to a dict
+                            formulaDict[re.findall('\\d+|\\D+', element)[0]] = int(re.findall('\\d+|\\D+', element)[1])
+                        workingDict = formulaDict.copy()
                     else:
-                        printToLog("# INFO - Compound [" + refcode + "] discarded. Structure-formula mismatch, unaccounted for atoms: ["+ str(workingDict) +"]")
-                        shutil.copyfile(os.path.join(pathToSort, fileName), os.path.join(structureFormulaMismatchPath, refcode + ".cif"))
-                        
-                        structureFormulaMismatchCount += 1
+                        elementSymbolLine = re.findall('\\d+|\\D+', value)[0].strip(" -")
+                        if not "?" in value and workingDict.__contains__(elementSymbolLine):
+                            #Increment a copy of the formula dict for every corresponding atom position, counts down for convenience
+                            workingDict[elementSymbolLine] -= 1
+
+        #If the formula doesn't equal 0 (All atoms accounted for), or a negative multiple (Symmetry equivalent), discard TODO: Cannot account for co-crytsals.
+            if not all(workingDict.get(key) % formulaDict.get(key) == 0 and not workingDict.get(key) == formulaDict.get(key) for key in formulaDict):
+                if all(workingDict.get(key) == formulaDict.get(key) for key in formulaDict):
+                    printToLog("# INFO - Compound [" + refcode + "] discarded. No structural data, all atoms unaccounted for: ["+ str(workingDict) +"]")
+                    shutil.copyfile(os.path.join(pathToSort, filename), os.path.join(noStructureDataPath, refcode + ".cif"))
+
+                    noStructureDataCount += 1
+                elif (workingDict.get("H") == formulaDict.get("H")):
+                    printToLog("# INFO - Compound [" + refcode + "] discarded. No hydrogen data, unaccounted for atoms: ["+ str(workingDict) +"]")
+                    shutil.copyfile(os.path.join(pathToSort, filename), os.path.join(noHydrogenDataPath, refcode + ".cif"))
+
+                    noHydrogenDataCount += 1
+                elif all(workingDict.get(key) == 0 or key == "H" for key in formulaDict):
+                    printToLog("# INFO - Compound [" + refcode + "] discarded. Incomplete hydrogen data, unaccounted for atoms: ["+ str(workingDict) +"]")
+                    shutil.copyfile(os.path.join(pathToSort, filename), os.path.join(incompleteHydrogenDataPath, refcode + ".cif"))
+
+                    incompleteHydrogenDataCount += 1
+                else:
+                    printToLog("# INFO - Compound [" + refcode + "] discarded. Structure-formula mismatch, unaccounted for atoms: ["+ str(workingDict) +"]")
+                    shutil.copyfile(os.path.join(pathToSort, filename), os.path.join(structureFormulaMismatchPath, refcode + ".cif"))
+                    
+                    structureFormulaMismatchCount += 1
+                survivingStructures -= 1
+            else:
+                if len(unaccounted) > 0:
+                    printToLog("# INFO - Compound [" + refcode + "] discarded. Found to contain the following atoms not accounted for by .UPF files: ["+ str(unaccounted) +"]")
+                    shutil.copyfile(os.path.join(pathToSort, filename), os.path.join(unaccountedElementsPath, refcode + ".cif"))
+
+                    unaccountedElementsCount += 1
                     survivingStructures -= 1
                 else:
-                    if len(unaccounted) > 0:
-                        printToLog("# INFO - Compound [" + refcode + "] discarded. Found to contain the following atoms not accounted for by .UPF files: ["+ str(unaccounted) +"]")
-                        shutil.copyfile(os.path.join(pathToSort, fileName), os.path.join(unaccountedElementsPath, refcode + ".cif"))
-
-                        unaccountedElementsCount += 1
-                        survivingStructures -= 1
-                    else:
-                        printToLog("# INFO - Compound [" + refcode + "] validated")
-                        shutil.copyfile(os.path.join(pathToSort, fileName), os.path.join(validatedPath, refcode + ".cif"))
-
-
+                    printToLog("# INFO - Compound [" + refcode + "] validated")
+                    shutil.copyfile(os.path.join(pathToSort, filename), os.path.join(validatedPath, refcode + ".cif"))
 
 finalPath = os.path.join(cifPath, "Original_CIFs")
 removeDirectory(finalPath, "# INFO - Cleaning existing sorted path at")

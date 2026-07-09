@@ -43,7 +43,7 @@ def createDirectory(path, text, exit):
         printToLog(text + " ["+ path + "]")
         os.makedirs(path)
         if exit:
-            sys.exit()
+            quit()
 
 #Remove directory is it exists
 def removeDirectory(path, text):
@@ -102,7 +102,7 @@ if os.path.isfile(cifPath):
                     CIF_inversionCentre = True
 else:
     printToLog("# WARN - Compound ["+refcode+"] does not have a .cif file")
-    sys.exit()
+    quit()
 
 # Get structure data .csv
 structureDataPath = os.path.join(homeDirectory, "structure_data.csv")
@@ -114,7 +114,7 @@ if os.path.exists(structureDataPath):
     CIF_symmetryFactor = round(float(CIF_symmetryEquivalents) / round(cellVolume / rcellVolume))
 else:
     printToLog("# WARN - No .csv file found to load compound data. Copy .csv from the CSD to the following path ["+ structureDataPath + "]")
-    sys.exit()
+    quit()
 
 # Remove .save directory
 saveDirectory = os.path.join(refcodeDirectory, refcode+".save")

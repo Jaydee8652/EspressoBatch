@@ -33,9 +33,9 @@ homeDirectory = os.getcwd()#Directory where we are
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
 
 #Make sure there is a directory to process
-outputPath = os.path.join(homeDirectory, "Output_Files")
-createDirectory(outputPath, "# WARN - No directory found for output files.", True)
-directories = [directory for directory in os.listdir(outputPath) if os.path.isdir(os.path.join(outputPath, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(outputPath, directory), "INCOMPLETE.txt"))]
+inputPath = os.path.join(homeDirectory, "Input_Files")
+createDirectory(inputPath, "# WARN - No directory found for input files.", True)
+directories = [directory for directory in os.listdir(inputPath) if os.path.isdir(os.path.join(inputPath, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(inputPath, directory), "INCOMPLETE.txt"))]
 
 inputDict = {}
 for directory in directories:#Put directories into a dict for easy access
@@ -45,7 +45,7 @@ for directory in directories:#Put directories into a dict for easy access
 numberOfDirectories = len(directories) # determine number of directories
 if numberOfDirectories == 0:
     printToLog("# WARN - No directories found in ["+ inputPath + "]")
-    sys.exit()
+    quit()
 else:
     printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
 
