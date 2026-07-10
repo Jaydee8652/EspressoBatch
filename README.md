@@ -9,11 +9,15 @@ $ pip install -r requirements.txt
 $ module load scipy-stack
 ```
 
+By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github inegration can be enabled to instead save this data to a repository, allowing the same gloabl database to be referenced from multiple clusters.
+
+Activating github integration:
+
 In utils.git_utils:
-
--Replace 'REPO' with the name of a github repository you control
-
--Replace 'github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000' with an auth token that has read and write permissions on said repo
+```
+-Replace "REPO" with the name of a github repository you control
+-Replace "TOKEN" with an auth token that has read and write permissions on said repo
+```
 
 Use:
 
