@@ -19,7 +19,7 @@ from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCS
 from utils.git_utils import downloadCSV, uploadCSV, getLocation, verify
 
 #Params - can be modified
-batchCount = 1
+batchCount = 16
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
