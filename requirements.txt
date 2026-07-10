@@ -1,3 +1,2 @@
 cif2cell
-cifkit
 pygithub
