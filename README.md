@@ -18,7 +18,7 @@ In 'utils.git_utils'
 In the repository:
 ```
 -Create a new .csv file called 'sheet.csv' in the home directory
--Create a new .txt file called 'sheet_flag.txt' in the home directory containing the string 'True'
+-Create a new .txt file called 'sheet_flag.txt' in the home directory, containing the string 'True'
 ```
 
 Finally run the following command to populate the .csv with headers:
@@ -35,6 +35,11 @@ $ python3 cif_sort.py
 On first usage will create the 'Original_CIFs' directory and request a structure_data.csv. The structure_data.csv can be obtained from the CSD, by saving a selection of structures as a TAB seperated values table and converting with excel or other .csv manager. Place corresponding .cif files in 'Original_CIFs', also obtained from the CSD and rerun. The sort should complete within a minute.
 
 It should be noted that .cifs with "structure-formula mismatch" may contain an unreported cocrystal/solvent. Manual inspection of these files is encouraged.
+```
+$ python3 qe_cif2cell.py
+```
+Will generate quantum-espresso input files, automatically run a test calculation, and then update the slurm request according to the projected resource use.
+
 ```
 $ python3 qe_cif2cell.py
 ```
