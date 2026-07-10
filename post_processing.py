@@ -51,7 +51,9 @@ def removeDirectory(path, text):
         printToLog(text + " ["+ path + "]")
         shutil.rmtree(path)
 
-
+PWSCF_ecutwfc = ""
+PWSCF_ecutrho = "" 
+PWSCF_conv_thr = ""
 PWSCF_version = ""
 PWSCF_time = ""
 PWSCF_numberMPI = ""
@@ -64,6 +66,7 @@ PWSCF_finalEnergy = ""
 
 PWSCF_done = False
 
+GIPAW_q_gipaw = ""
 GIPAW_version = ""
 GIPAW_time = ""
 GIPAW_numberMPI = ""
@@ -136,17 +139,46 @@ if os.path.exists(summaryPath):
     
 printToLog("# INFO - Compound ["+ refcode +"] Populating summary file ["+ summaryPath + "]")
 with open(summaryPath, "a") as summary:
-    print("Output summary for compound with refcode ["+refcode+"]", file=summary)
-    print("\n-CIF data-\n", file=summary)
-    print("CIF_symmetryEquivalents "+str(CIF_symmetryEquivalents), file=summary)
-    print("CIF_symmetryFactor "+str(CIF_symmetryFactor), file=summary)
-    print("CIF_inversionCentre "+str(CIF_inversionCentre), file=summary)
+    print("#Output summary for compound with refcode ["+refcode+"]", file=summary)
+    print("\n# -CIF data\n", file=summary)
+    print("CIF_symmetryEquivalents = "+str(CIF_symmetryEquivalents), file=summary)
+    print("CIF_symmetryFactor = "+str(CIF_symmetryFactor), file=summary)
+    print("CIF_inversionCentre = "+str(CIF_inversionCentre), file=summary)
+    
+    #REFCODE.in
+    pwscfIn = os.path.join(refcodeDirectory, refcode+".in")
+    if os.path.isfile(pwscfIn):
+        print("\n# -PWSCF params-\n", file=summary)            
+        with open(pwscfIn) as file:
+            lines = file.read().splitlines()
+            for line in lines:
+                if "ecutwfc" in line:
+                    PWSCF_ecutwfc = float(re.sub("[^0-9.]", "", line).strip())
+
+                    print("PWSCF_ecutwfc = "+str(PWSCF_ecutwfc), file=summary)
+                elif "ecutrho" in line:
+                    if not PWSCF_ecutwfc == "":
+                        temp = float(re.sub("[^0-9.]", "", line).strip())
+                        PWSCF_ecutrho = temp / PWSCF_ecutwfc
+                    
+                        print("PWSCF_ecutrho = "+str(PWSCF_ecutrho), file=summary)
+                    else:
+                        print("# WARN - No value for PWSCF_ecutwfc, PWSCF_ecutrho cannot be calculated for ["+refcode+"]", file=summary)
+                        printToLog("# WARN - Compound ["+refcode+"] No value for PWSCF_ecutwfc, PWSCF_ecutrho cannot be calculated")
+
+                elif "conv_thr" in line:
+                    PWSCF_conv_thr = line[line.find("=")+1:].strip()
+
+                    print("PWSCF_conv_thr = "+str(PWSCF_conv_thr), file=summary)
+    else:
+        print("# WARN - No .in file found for compound with refcode ["+refcode+"]", file=summary)
+        printToLog("# WARN - Compound ["+refcode+"] No .in file found")
     
     #REFCODE.out
-    outPath = os.path.join(refcodeDirectory, refcode+".out")
-    if os.path.isfile(outPath):
-        with open(outPath) as file:
-            print("\n-PWSCF output-\n", file=summary)
+    pwscfOut = os.path.join(refcodeDirectory, refcode+".out")
+    if os.path.isfile(pwscfOut):
+        with open(pwscfOut) as file:
+            print("\n# -PWSCF output-\n", file=summary)
 
             lineNumber = 0
             read = file.read()
@@ -163,39 +195,41 @@ with open(summaryPath, "a") as summary:
                     PWSCF_time = date.strftime("%Y-%m-%d %H:%M:%S")
                     PWSCF_version = line.strip().split(" ")[2]
 
-                    print("PWSCF_version "+str(PWSCF_version), file=summary)
-                    print("PWSCF_time "+str(PWSCF_time), file=summary)   
+                    print("PWSCF_version = "+str(PWSCF_version), file=summary)
+                    print("PWSCF_time = "+str(PWSCF_time), file=summary)   
                 elif "Number of MPI processes" in line:
                     PWSCF_numberMPI = float(re.sub("[^0-9.]", "", line).strip())
 
-                    print("PWSCF_numberMPI "+str(PWSCF_numberMPI), file=summary)
+                    print("PWSCF_numberMPI = "+str(PWSCF_numberMPI), file=summary)
                 elif "Threads/MPI process" in line:
                     PWSCF_numberThreads =  float(re.sub("[^0-9.]", "", line).strip())
 
-                    print("PWSCF_numberThreads "+str(PWSCF_numberThreads), file=summary)
+                    print("PWSCF_numberThreads = "+str(PWSCF_numberThreads), file=summary)
                 elif "R & G space division" in line:
                     PWSCF_RG = float(re.sub("[^0-9.]", "", line).strip())
 
-                    print("PWSCF_RG "+str(PWSCF_RG), file=summary)
+                    print("PWSCF_RG = "+str(PWSCF_RG), file=summary)
                 elif "Estimated total dynamical RAM" in line:
                     PWSCF_estimatedRAM = float(re.sub("[^0-9.]", "", line).strip())
                     
-                    print("PWSCF_estimatedRAM "+str(PWSCF_estimatedRAM), file=summary)
+                    print("PWSCF_estimatedRAM = "+str(PWSCF_estimatedRAM), file=summary)
                 elif "bfgs converged" in line:
                     PWSCF_scfCycles = float(re.sub("[^0-9.]", " ", line).strip()[:5].strip())
                     PWSCF_bfgsSteps = float(re.sub("[^0-9.]", " ", line).strip()[-5:].strip())
                     
-                    print("PWSCF_scfCycles "+str(PWSCF_scfCycles), file=summary)
-                    print("PWSCF_bfgsSteps "+str(PWSCF_bfgsSteps), file=summary) 
+                    print("PWSCF_scfCycles = "+str(PWSCF_scfCycles), file=summary)
+                    print("PWSCF_bfgsSteps = "+str(PWSCF_bfgsSteps), file=summary) 
                 elif "Final energy" in line:
                     PWSCF_finalEnergy = float(re.sub("[^0-9.-]", "", line).strip())
                     
-                    print("PWSCF_finalEnergy "+str(PWSCF_finalEnergy), file=summary)
+                    print("PWSCF_finalEnergy = "+str(PWSCF_finalEnergy), file=summary)
                 elif "JOB DONE" in line:
                     PWSCF_done = True
-                    print("PWSCF_done "+str(PWSCF_done), file=summary) 
+                    print("PWSCF_done = "+str(PWSCF_done), file=summary) 
         if PWSCF_done == False:
-            print("PWSCF_done "+str(PWSCF_done)+" # WARN - PWSCF did not run to completion", file=summary) 
+            print("PWSCF_done = "+str(PWSCF_done), file=summary) 
+            print("# WARN - PWSCF did not run to completion", file=summary) 
+
             printToLog("# WARN - Compound ["+refcode+"] PWSCF did not run to completion")
         if PWSCF_scfCycles == "":
             printToLog("# WARN - Compound ["+refcode+"] Convergence not reached in PWSCF output")
@@ -204,14 +238,28 @@ with open(summaryPath, "a") as summary:
     else:
         print("# WARN - No .out file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No PWSCF .out file found")
-    
+
+    #gipaw.REFCODE.in
+    gipawIn = os.path.join(refcodeDirectory, "gipaw."+refcode+".in")
+    if os.path.isfile(gipawIn):
+        print("\n# -GIPAW params-\n", file=summary)            
+        with open(gipawIn) as file:
+            lines = file.read().splitlines()
+            for line in lines:
+                if "q_gipaw" in line:
+                    GIPAW_q_gipaw = float(re.sub("[^0-9.]", "", line).strip())
+
+                    print("GIPAW_q_gipaw = "+str(GIPAW_q_gipaw), file=summary)
+    else:
+        print("# WARN - No gipaw .in file found for compound with refcode ["+refcode+"]", file=summary)
+        printToLog("# WARN - Compound ["+refcode+"] No GIPAW .in file found")
+        
     #gipaw.REFCODE.out
-    gipawPath = os.path.join(refcodeDirectory, "gipaw."+refcode+".out")
+    gipawOut = os.path.join(refcodeDirectory, "gipaw."+refcode+".out")
     sigmaStart = 0
-    
-    if os.path.isfile(gipawPath):
-        with open(gipawPath) as file:
-            print("\n-GIPAW output-\n", file=summary)            
+    if os.path.isfile(gipawOut):
+        print("\n# -GIPAW output-\n", file=summary)            
+        with open(gipawOut) as file:
             lineNumber = 0
             lines = file.read().splitlines()
             for line in lines:
@@ -226,31 +274,31 @@ with open(summaryPath, "a") as summary:
                     GIPAW_time = date.strftime("%Y-%m-%d %H:%M:%S")
                     GIPAW_version = line.strip().split(" ")[2]
                     
-                    print("GIPAW_version "+str(GIPAW_version), file=summary)
-                    print("GIPAW_time "+str(GIPAW_time), file=summary)   
+                    print("GIPAW_version = "+str(GIPAW_version), file=summary)
+                    print("GIPAW_time = "+str(GIPAW_time), file=summary)   
                 elif "Number of MPI processes" in line:
                     GIPAW_numberMPI = float(re.sub("[^0-9.]", "", line).strip())
 
-                    print("GIPAW_numberMPI "+str(GIPAW_numberMPI), file=summary)
+                    print("GIPAW_numberMPI = "+str(GIPAW_numberMPI), file=summary)
                 elif "Threads/MPI process" in line:
                     GIPAW_numberThreads = float(re.sub("[^0-9.]", "", line).strip())
 
-                    print("GIPAW_numberThreads "+str(GIPAW_numberThreads), file=summary)
+                    print("GIPAW_numberThreads = "+str(GIPAW_numberThreads), file=summary)
                 elif "R & G space division" in line:
                     GIPAW_RG = float(re.sub("[^0-9.]", "", line).strip())
 
-                    print("GIPAW_RG "+str(GIPAW_RG), file=summary)
+                    print("GIPAW_RG = "+str(GIPAW_RG), file=summary)
                 elif "Macroscopic shape contribution in ppm" in line:
                     GIPAW_mscPPM = float(re.sub("[^0-9.]", "", line).strip())
 
-                    print("GIPAW_mscPPM "+str(GIPAW_mscPPM), file=summary)
+                    print("GIPAW_mscPPM = "+str(GIPAW_mscPPM), file=summary)
                 elif "NMR macroscopic correction" in line:
                     GIPAW_msCorrection.append(re.sub('\s{2,}', ' ', lines[lineNumber]).strip().split(" "))
                     GIPAW_msCorrection.append(re.sub('\s{2,}', ' ', lines[lineNumber+1]).strip().split(" "))
                     GIPAW_msCorrection.append(re.sub('\s{2,}', ' ', lines[lineNumber+2]).strip().split(" "))
 
                     GIPAW_msCorrection = str(GIPAW_msCorrection)
-                    print("GIPAW_msCorrection "+str(GIPAW_msCorrection), file=summary)
+                    print("GIPAW_msCorrection = "+str(GIPAW_msCorrection), file=summary)
                 elif "Total sigma" in line:
                     if sigmaStart == 0:
                         sigmaStart = lineNumber
@@ -303,15 +351,16 @@ with open(summaryPath, "a") as summary:
                         print("_"+ str(line.lstrip()) + " - Averaged over "+str(len(workingDict))+" atoms: "+str(currentSum / len(workingDict)), file=summary)
                 elif "JOB DONE" in line:
                     GIPAW_done = True
-                    print("GIPAW_done "+str(GIPAW_done), file=summary)
+                    print("GIPAW_done = "+str(GIPAW_done), file=summary)
             if GIPAW_done == False:
-                print("GIPAW_done "+str(GIPAW_done)+" # WARN - GIPAW did not run to completion", file=summary) 
+                print("GIPAW_done = "+str(GIPAW_done), file=summary) 
+                print("# WARN - GIPAW did not run to completion", file=summary) 
                 printToLog("# WARN - Compound ["+refcode+"] GIPAW did not run to completion")
     else:
         print("# WARN - No gipaw .out file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No GIPAW .out file found")
 
-    if os.path.isfile(gipawPath) and os.path.isfile(outPath):
+    if os.path.isfile(gipawOut) and os.path.isfile(pwscfOut):
         if not PWSCF_numberMPI == GIPAW_numberMPI:
             printToLog("# WARN - Compound ["+refcode+"] Number of MPI do not match between PWSCF and GIPAW outputs")
         if not PWSCF_numberThreads == GIPAW_numberThreads:
