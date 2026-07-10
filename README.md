@@ -9,18 +9,27 @@ $ pip install -r requirements.txt
 $ module load scipy-stack
 ```
 
-By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github inegration can be enabled to instead save this data to a repository, allowing the same gloabl database to be referenced from multiple clusters.
+By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. Activating github integration:
 
-Activating github integration:
-
-In utils.git_utils:
+In 'utils.git_utils'
 ```
--Replace "REPO" with the name of a github repository you control
--Replace "TOKEN" with an auth token that has read and write permissions on said repo
+-Replace the value for "REPO" with the name of a github repository you control
+-Replace the value for "TOKEN" with an auth token that has read and write permissions on said repo
+```
+Run the following command
+```
+$ python3 _init.py
 ```
 
-Use:
+Useage instructions:
+```
+$ python3 cif_sort.py
+```
+On first usage will create the 'Original_CIFs' directory and request a structure_data.csv. The structure_data.csv can be obtained from the CSD, by saving a selection of structures as a TAB seperated values table and cinverting with excel or other .csv manager. Place corresponding .cif files in 'Original_CIFs', also obtained from the CSD and rerun. The sort should complete within a minute.
 
-Run cif_sort.py first, this will create the Original_CIFs file and request structure_data.csv, both can be obained from the CSD.
+It should be noted that .cifs with "structure-formula mismatch" may contain an unreported cocrystal/solvent. Manual inspection of these files is encouraged.
 
-Run qe_cif2cell.py to generate quantum-espresso input files.
+```
+$ python3 qe_cif2cell.py
+```
+- qe_cif2cell.py,  generate quantum-espresso input files.
