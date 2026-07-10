@@ -40,11 +40,12 @@ if numberOfDirectories == 0:
     printToLog("# WARN - No directories found in ["+ inputPath + "]")
     quit()
 else:
+    post = os.path.join(homeDirectory, "post_processing.py")
     printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
     for refcode in directories:
         printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
         refcodeDirectory = os.path.join(inputPath, refcode)
-        batchCommand = f"module load StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b xtb/6.6.1; cd {refcodeDirectory}; python3 /lustre10/scratch/jnd971/WiddifieldProjects/homeDirectory/post_processing.py /lustre10/scratch/jnd971/WiddifieldProjects/homeDirectory"
+        batchCommand = f"module load StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b xtb/6.6.1; cd {refcodeDirectory}; python3 {post} {homeDirectory}"
         try:
             printToLog("# INFO - Compound ["+refcode+"] Rerunning post-processing")
             subprocess.call(batchCommand,shell=True)                                
