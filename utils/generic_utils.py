@@ -36,5 +36,4 @@ def removeDirectory(log, path, text):
 #Write an entry to the local csv
 def writeCSV(df, refcode, location, value):
     if not value == "":
-        df.loc[df["[REFCODE]"]==refcode, location] = value
-
+        df.loc[refcode, location] = value

@@ -14,6 +14,7 @@ import io
 import csv
 import datetime
 import time
+import sys
 from utils.generic_utils import *
 
 # Params - can be changed
@@ -108,40 +109,43 @@ def initSheet(log):
     if os.path.isfile(localSheet):
         printToLog(log,"# INFO - Removing existing local file ["+ localSheet + "]")
         os.remove(localSheet)# Clear current local copy
-            
-        printToLog(log,"# INFO - Creating new sheet ["+ localSheet + "]")
-        with open(localSheet, 'a') as file:
-            file.write("[REFCODE]")
-        df = pd.read_csv(localSheet)
-        df = pd.concat([df, pd.DataFrame({"[REFCODE]": ["init"]})], ignore_index=True)    
-    
-        df["[BATCH_location]"] = ["Abyss"]    
-        df["[BATCH_done]"] = ["True"]
-        df["[BATCH_time]"] = ["2026-06-26 19:10:06"]
-    
-        df["[PWSCF_done]"] = ["True"]
-        df["[PWSCF_time]"] = ["2026-06-26 19:10:06"]
-    
-        df["[GIPAW_done]"] = ["True"]
-        df["[GIPAW_time]"] = ["2026-06-26 19:10:06"]
-    
-        df["[PWSCF_version]"] = ["v.7.3.1"]
-        df["[PWSCF_numberMPI]"] = ["1"]
-        df["[PWSCF_numberThreads]"] = ["1"]
-        df["[PWSCF_RG]"] = ["1"]
-        df["[PWSCF_estimatedRAM]"] = ["1.1"]
-        df["[PWSCF_scfCycles]"] = ["1"]
-        df["[PWSCF_bfgsSteps]"] = ["1"]
-        df["[PWSCF_finalEnergy]"] = ["-1"]
         
-        df["[GIPAW_version]"] = ["v.7.3.1"]
-        df["[GIPAW_numberMPI]"] = ["1"]
-        df["[GIPAW_numberThreads]"] = ["1"]
-        df["[GIPAW_RG]"] = ["1"]
-        df["[GIPAW_mscPPM]"] = ["1.1"]
-        df["[GIPAW_msCorrection]"] = ["[['0.6667', '0.0000', '0.0000'], ['0.0000', '0.6667', '0.0000'], ['0.0000', '0.0000', '0.6667']]"]
-        df.to_csv(localSheet, index=False)
+    printToLog(log,"# INFO - Creating new sheet ["+ localSheet + "]")
+    with open(localSheet, 'a') as file:
+        file.write("[REFCODE]")
+    df = pd.read_csv(localSheet)
+    df = pd.concat([df, pd.DataFrame({"[REFCODE]": ["init"]})], ignore_index=True)    
 
-#localLog = "utils.log"
-#initSheet(localLog)
-#uploadCSV(localLog)
+    df["[BATCH_location]"] = ["Abyss"]    
+    df["[BATCH_done]"] = ["True"]
+    df["[PWSCF_done]"] = ["True"]
+    df["[GIPAW_done]"] = ["True"]
+
+    df["[BATCH_time]"] = ["2026-06-26 19:10:06"]
+    df["[PWSCF_time]"] = ["2026-06-26 19:10:06"]
+    df["[GIPAW_time]"] = ["2026-06-26 19:10:06"]
+
+    df["[CIF_symmetryEquivalents]"] = ["2"]
+    df["[CIF_symmetryFactor]"] = ["2"]
+    df["[CIF_inversionCentre]"] = ["True"]
+
+    df["[PWSCF_ecutwfc]"] = ["55.0"]
+    df["[PWSCF_ecutrho]"] = ["8"]
+    df["[PWSCF_conv_thr]"] = ["1.D-6"]
+    df["[PWSCF_version]"] = ["v.7.3.1"]
+    df["[PWSCF_numberMPI]"] = ["1"]
+    df["[PWSCF_numberThreads]"] = ["1"]
+    df["[PWSCF_RG]"] = ["1"]
+    df["[PWSCF_estimatedRAM]"] = ["1.1"]
+    df["[PWSCF_scfCycles]"] = ["1"]
+    df["[PWSCF_bfgsSteps]"] = ["1"]
+    df["[PWSCF_finalEnergy]"] = ["-1"]
+    
+    df["[GIPAW_q_gipaw]"] = ["0.01"]
+    df["[GIPAW_version]"] = ["v.7.3.1"]
+    df["[GIPAW_numberMPI]"] = ["1"]
+    df["[GIPAW_numberThreads]"] = ["1"]
+    df["[GIPAW_RG]"] = ["1"]
+    df["[GIPAW_mscPPM]"] = ["1.1"]
+    df["[GIPAW_msCorrection]"] = ["[['0.6667', '0.0000', '0.0000'], ['0.0000', '0.6667', '0.0000'], ['0.0000', '0.0000', '0.6667']]"]
+    df.to_csv(localSheet, index=False)
