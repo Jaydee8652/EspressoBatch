@@ -53,4 +53,6 @@ if verify(log):
                     name = line[:line.find("=")-1].strip()
                     writeCSV(df, refcode, "["+str(name)+"]", str(value))
         df.to_csv(localPath)#Update local csv
+        df = df.replace("nan", "")
+
     uploadCSV(log)
