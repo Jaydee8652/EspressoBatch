@@ -301,7 +301,7 @@ for cif in cifFiles:
                         print(re.sub("60", str(dynamicalRAM), line), file=file)
                     else:
                         print(line, file=file)
-                file.write(f"srun --cpus-per-task=1 --ntasks=1 python3 {post} {homeDirectory}")
+                file.write(f"srun --cpus-per-task=1 --ntasks=1 python3 {post}")
         else:
             printToLog("# WARN - Compound [" + refcode + "] No QE_SUB file found")
             failureCount += 1
