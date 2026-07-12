@@ -30,10 +30,10 @@ import datetime
 import time       
 import sys
 from utils.generic_utils import printToLog as pl, createDirectory as cd
-from utils.git_utils import downloadCSV, uploadCSV, appendCSV, updateCSV, batchCalculations, verify
+from utils.git_utils import downloadCSV, uploadCSV, appendCSV, updateCSV, batchCalculations, verify, getQueue
 
 #Params - can be modified
-batchCount = 16
+batchTarget = 16
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -46,15 +46,18 @@ log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
 homeDirectory = os.getcwd()#Directory where we are
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
 
+current = getQueue(log)
+batchCount = batchTarget - current
+
 printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2 3') to choose processes to perform.")
 options = {
     "1": "Append .csv with all local input directory refcodes",
     "2": "Update .csv with output data from all local summary files",
-    "3": "Batch "+str(batchCount)+ " new calculations to slurm",
+    "3": "Batch ["+str(batchCount)+ "] (to total ["+str(batchTarget)+"] in queue) new calculations to slurm",
     "0": "All in sequence",
 }
 for key, value in options.items():
-    printToLog(f"# INFO - [{key}] {value}")
+    printToLog(f"# INFO -    [{key}] {value}")
 choices = input(">")
 invalidInputs = []
 regex = re.compile('[^0-9 ]')
@@ -70,7 +73,7 @@ for choice in choices:
 if len(invalidInputs) > 0:
     printToLog("# WARN - The following inputs ["+str(list(set(invalidInputs)))+"] are not supported")
     quit()
-printToLog("# INFO - The following processes have been selected ["+str(choices)+"]")
+printToLog("# INFO - The following processes have been selected ["+str(sorted(choices,key=int))+"]")
 
 if verify(log):
     localPath = downloadCSV(log)
@@ -80,4 +83,5 @@ if verify(log):
         updateCSV(log)
     if choices.__contains__("3"):
         batchCalculations(log, batchCount)
+        
     uploadCSV(log)

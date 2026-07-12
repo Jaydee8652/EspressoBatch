@@ -38,6 +38,7 @@ if numberOfDirectories == 0:
     quit()
 else:
     post = os.path.join(os.path.join(homeDirectory,"utils"), "post_processing.py")
+
     printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
     for refcode in directories:
         printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
