@@ -217,7 +217,6 @@ def batchCalculations(log, batchCount):
         
     processedCount = 0
 
-    localPath = downloadCSV(log)
     df = pd.read_csv(localSheet)
     df.set_index('[REFCODE]', inplace = True)
 
