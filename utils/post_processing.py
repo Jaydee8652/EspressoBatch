@@ -3,7 +3,7 @@
 # Extracts desired data from PWSCF and gipaw .out files to a summary file, saved here and in a dedicated directory
 # Automatically removes symmetry equivalent atoms from the gipaw output
 
-# Automatically run by slurm within the input directory
+# Automatically run by slurm within the input directory, takes the home directory as command line input
 
 # All processes are reported to post_processing.log for debugging, all post_processing scripts output to the same log within a home directory,
 # and individual processes produce their own log locally within the input file
@@ -18,7 +18,6 @@ import io
 import csv
 import datetime
 import time          
-from wyckoff import WyckoffDatabase
 
 #Params - can be modified
 tolerance = 0.01
@@ -28,8 +27,7 @@ def printToLog(info):#Prints and logs in one, convention I personally like
     logs = os.path.join(homeDirectory, "logs")
     if not os.path.exists(logs):
         os.makedirs(logs)
-    info = str(info)
-
+    
     time = ""
     if not info.startswith(" ---"):
         time = str(datetime.datetime.now().strftime("[%H:%M:%S] "))
@@ -52,10 +50,6 @@ def removeDirectory(path, text):
     if os.path.exists(path):
         printToLog(text + " ["+ path + "]")
         shutil.rmtree(path)
-
-CIF_symmetryTableNumber = ""
-CIF_symmetryElements = []
-CIF_symmetryFactor = ""
 
 PWSCF_ecutwfc = ""
 PWSCF_ecutrho = "" 
@@ -83,14 +77,14 @@ GIPAW_msCorrection = []
 
 GIPAW_done = False
 
+CIF_symmetryEquivalents = 0
+CIF_inversionCentre = False
+CIF_symmetryFactor = ""
 
 #Main
 log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
-
-#homeDirectory = sys.argv[1]
+homeDirectory = sys.argv[1]
 refcodeDirectory = os.getcwd()#Directory where we are
-homeDirectory = os.path.split(os.path.split(refcodeDirectory)[0])[0]
-
 refcode = os.path.basename(refcodeDirectory)
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Compound ["+refcode+"] Starting "+str(os.path.basename(sys.argv[0]).split(".")[0])+" in ["+str(refcodeDirectory)+"]")
 
@@ -106,14 +100,12 @@ if os.path.isfile(cifPath):
     with open(cifPath, "r") as cif:
         for line in cif:
             if line[0].isdigit():
-                CIF_symmetryElements.append(line.split()[1])
-            elif "_symmetry_Int_Tables_number" in line:
-                CIF_symmetryTableNumber = int(re.sub("[^0-9.]", "", line).strip())         
+                CIF_symmetryEquivalents += 1
+                if "-x,-y,-z" in line:
+                    CIF_inversionCentre = True
 else:
     printToLog("# WARN - Compound ["+refcode+"] does not have a .cif file")
     quit()
-
-WyckoffData = WyckoffDatabase().data[CIF_symmetryTableNumber]
 
 # Get structure data .csv
 structureDataPath = os.path.join(homeDirectory, "structure_data.csv")
@@ -122,7 +114,7 @@ if os.path.exists(structureDataPath):
     df.set_index('[REFCODE]', inplace = True)
     cellVolume = float(df.at[refcode, "[_cell_volume]"])
     rcellVolume = float(df.at[refcode, "[_rcell_volume]"])
-    CIF_symmetryFactor = round(len(CIF_symmetryElements) / round(cellVolume / rcellVolume))
+    CIF_symmetryFactor = round(float(CIF_symmetryEquivalents) / round(cellVolume / rcellVolume))
 else:
     printToLog("# WARN - No .csv file found to load compound data. Copy .csv from the CSD to the following path ["+ structureDataPath + "]")
     quit()
@@ -148,22 +140,10 @@ if os.path.exists(summaryPath):
 printToLog("# INFO - Compound ["+ refcode +"] Populating summary file ["+ summaryPath + "]")
 with open(summaryPath, "a") as summary:
     print("#Output summary for compound with refcode ["+refcode+"]", file=summary)
-    
-    #REFCODE_batch.txt
-    batch = os.path.join(refcodeDirectory, refcode+"_batch.txt")
-    if os.path.isfile(batch):
-        with open(batch) as file:
-            lines = file.read().splitlines()
-            for line in lines:
-                print(line, file=summary)
-    else:
-        print("# WARN - No batch file found for compound with refcode ["+refcode+"]", file=summary)
-        printToLog("# WARN - Compound ["+refcode+"] No batch file found")
-
     print("\n# -CIF data\n", file=summary)
-    print("CIF_symmetryTableNumber = "+str(CIF_symmetryTableNumber), file=summary)
-    print("CIF_symmetryElements = "+str(CIF_symmetryElements), file=summary)
+    print("CIF_symmetryEquivalents = "+str(CIF_symmetryEquivalents), file=summary)
     print("CIF_symmetryFactor = "+str(CIF_symmetryFactor), file=summary)
+    print("CIF_inversionCentre = "+str(CIF_inversionCentre), file=summary)
     
     #REFCODE.in
     pwscfIn = os.path.join(refcodeDirectory, refcode+".in")
@@ -321,7 +301,9 @@ with open(summaryPath, "a") as summary:
                     print("GIPAW_msCorrection = "+str(GIPAW_msCorrection), file=summary)
                 elif "Total sigma" in line:
                     if sigmaStart == 0:
-                        sigmaStart = lineNumber                    
+                        sigmaStart = lineNumber
+                    
+                    
                     if ((lineNumber - sigmaStart) / 10) % CIF_symmetryFactor == 0:
                         regex = re.compile('[^a-zA-Z ]')
                         initialAtom = str(line.strip()[:13].strip())
@@ -335,64 +317,20 @@ with open(summaryPath, "a") as summary:
                             sigma = float(curr.strip()[-15:].lstrip())
                             previousDict[atom] = sigma
 
-                            coordinates = re.sub('\s{2,}', ' ', curr[curr.find("(")+1:curr.find(")")]).strip().split(" ")
-                            x = float(coordinates[0])
-                            y = float(coordinates[1])
-                            z = float(coordinates[2])
+                            position = re.sub('\s{2,}', ' ', curr[curr.find("(")+1:curr.find(")")]).strip().split(" ")
+                            if CIF_inversionCentre and position == ['0.000000', '0.000000', '0.000000']:
+                                printToLog("# WARN - Compound ["+refcode+"] Atom on inversion centre ["+str(atom)+"] ["+str(position)+"]")
+                                previousDict.clear()
+                                break
 
-                            for wyckoff in WyckoffData.wyckoff_positions:
-                                #if not wyckoff.multiplicity == int(CIF_symmetryFactor):
-                                for position in wyckoff.coordinates:                                    
-                                    target = []
-                                    target.append(float(eval(str(position[0]))))
-                                    target.append(float(eval(str(position[1]))))
-                                    target.append(float(eval(str(position[2]))))
-
-                                    printToLog(atom +" "+ str(coordinates) + " " + str(target) + " "+ str(position))
-                                    if all(round(float(target[i]) - float(coordinates[i]), 5) == 0 for i in range(len(target))):
-                                    #        printToLog(atom +" "+ str(coordinates) + " " + str(target) + " "+ str(position))
-                                            printToLog("HI!")
-                                                #sigmaStart -= 10 * (CIF_symmetryFactor / wyckoff.multiplicity)
-                                     #   for i in range(len(target)):
-                                     #       printToLog(round(float(target[i]) - float(coordinates[i]), 5)))
-                                            
-                        #        for symmetryElement in CIF_symmetryElements:
-                    #            if symmetryElement == "x,y,z":
-                     #               continue
-                                    
-                      #          functions = symmetryElement.split(",")
-                       #         printToLog(str(functions))
-                                
-                       #         x = float(position[0])
-                       #         y = float(position[1])
-                        #        z = float(position[2])
-
-                         #       newPosition = []
-                          #      newPosition.append(eval(functions[0]))
-                          #      newPosition.append(eval(functions[1]))
-                          #      newPosition.append(eval(functions[2]))
-
-                        #        for i in range(len(position)):
-                         #           printToLog(str(round(float(position[i]), 7) - round(float(newPosition[i]))))
-                                
-                        #        if all(round(float(position[i]), 7) - round(float(newPosition[i]), 7) == 0 for i in range(len(position))):
-                           #         printToLog("HI!--------------------------------------------------------------------------------------------------------------------")#
-
-                            
-                            
-                      #      if position == ['0.000000', '0.000000', '0.000000']:
-                      #          printToLog("# WARN - Compound ["+refcode+"] Atom on inversion centre ["+str(atom)+"] ["+str(position)+"]")
-                       #         previousDict.clear()
-                       #         break
-#
-                 #       if len(previousDict) == 0:
-                #            for i in range(round(CIF_symmetryFactor / 2)):
-                #                curr = lines[(10 * i) + lineNumber - 1]
+                        if len(previousDict) == 0:
+                            for i in range(round(CIF_symmetryFactor / 2)):
+                                curr = lines[(10 * i) + lineNumber - 1]
     
-                #                atom = str(curr.strip()[:13].strip())
-                 #               sigma = float(curr.strip()[-15:].lstrip())
-                  #              previousDict[atom] = sigma
-                   #             sigmaStart -= 10
+                                atom = str(curr.strip()[:13].strip())
+                                sigma = float(curr.strip()[-15:].lstrip())
+                                previousDict[atom] = sigma
+                                sigmaStart -= 10
                         
                         workingDict = previousDict.copy()
                         for atom in previousDict.keys():
@@ -410,16 +348,7 @@ with open(summaryPath, "a") as summary:
                                 diff = activeSigma - sigma
                                 if diff < -tolerance or diff > tolerance:
                                     printToLog("# WARN - Compound ["+refcode+"] has symmetry equivalent atoms ["+str(activeAtom)+"] and ["+str(atom)+"] outside tolerance ["+str(diff)+"]")
-                        array = []
-                        array.append(re.sub('\s{2,}', ' ', lines[lineNumber]).strip().split(" "))
-                        array.append(re.sub('\s{2,}', ' ', lines[lineNumber+1]).strip().split(" "))
-                        array.append(re.sub('\s{2,}', ' ', lines[lineNumber+2]).strip().split(" "))
-                        array = str(array)
-                        
                         print("_"+ str(line.lstrip()) + " - Averaged over "+str(len(workingDict))+" atoms: "+str(currentSum / len(workingDict)), file=summary)
-                        print("_"+array, file=summary)
-
-                        
                 elif "JOB DONE" in line:
                     GIPAW_done = True
                     print("GIPAW_done = "+str(GIPAW_done), file=summary)
@@ -445,6 +374,6 @@ shutil.copyfile(summaryPath, summaryCopyPath)
 printToLog("# INFO - Compound ["+ refcode +"] Copied summary file ["+ summaryCopyPath + "]")
 
 outputPath = os.path.join(outputsPath, refcode)
-removeDirectory(outputPath, "# INFO - Compound ["+ refcode +"] Cleaning existing output path at")
+removeDirectory(outputPath, "# INFO - Cleaning existing output path at")
 printToLog("# INFO - Compound ["+ refcode +"] Copied output path ["+str(refcodeDirectory)+"] to ["+str(outputPath)+"]")
 shutil.copytree(refcodeDirectory, outputPath)
