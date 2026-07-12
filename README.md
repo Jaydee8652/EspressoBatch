@@ -41,6 +41,6 @@ $ python3 qe_cif2cell.py
 Will generate quantum-espresso input files, automatically run a test calculation, and then update the slurm request according to the projected resource use.
 
 ```
-$ python3 qe_cif2cell.py
+$ python3 batch_control.py
 ```
-Will generate quantum-espresso input files, automatically run a test calculation, and then update the slurm request according to the projected resource use.
+Will present the user with 3 processes to run.
