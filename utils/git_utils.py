@@ -247,7 +247,7 @@ def batchCalculations(log, batchCount):
                             print("BATCH_time = "+str(now), file=batch)
                             print("BATCH_location = "+str(location), file=batch)
                             
-                            printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(getLocation())+"]")
+                            printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(location)+"]")
                             processedCount += 1
                     except subprocess.CalledProcessError as e:
                         printToLog(log,"# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
