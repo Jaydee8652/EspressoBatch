@@ -47,7 +47,7 @@ $ python3 batch_control.py
 ```
 On first usage will attempt to determine the name of the local cluster, saving it to 'location.txt' to be referenced by other scripts. This string can be changed manually if necessary. 
 
-Retreives the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
+Displays the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
 ```
  - 1:
  Append the refcode of all local input directories to a .csv stored locally / on github
@@ -60,6 +60,7 @@ Retreives the current slurm queue, determines the number of previously batched c
  - 3: 
  References and updates a .csv stored locally / on github to submit requests to slurm. Will only run calculations not flagged as previously batched.
  Batches 'batchCount' every run to avoid requesting too many resources at once. 'batchCount' by default is the number of calculations that would lead to a slurm queue length of 16. 
+ Displays the final slurm queue
 
  - 0:
  "Speed dial" for all processes in sequence
