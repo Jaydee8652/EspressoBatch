@@ -43,4 +43,4 @@ Will generate quantum-espresso input files, automatically run a test calculation
 ```
 $ python3 batch_control.py
 ```
-Will present the user with 3 processes to run.
+On first usage will attempt to determine the name of the local cluster, and save it to 'location.txt'. Will then retreive the current slurm queue and present the user with 3 processes to run.
