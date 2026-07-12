@@ -29,12 +29,14 @@ $ python3 _init.py
 
 
 Usage instructions:
+
 ```
 $ python3 cif_sort.py
 ```
 On first usage will create the 'Original_CIFs' directory and request a structure_data.csv. The structure_data.csv can be obtained from the CSD, by saving a selection of structures as a TAB seperated values table and converting with excel or other .csv manager. Place corresponding .cif files in 'Original_CIFs', also obtained from the CSD and rerun. The sort should complete within a minute.
 
 It should be noted that .cifs with "structure-formula mismatch" may contain an unreported cocrystal/solvent. Manual inspection of these files is encouraged.
+
 ```
 $ python3 qe_cif2cell.py
 ```
@@ -43,4 +45,24 @@ Will generate quantum-espresso input files, automatically run a test calculation
 ```
 $ python3 batch_control.py
 ```
-On first usage will attempt to determine the name of the local cluster, and save it to 'location.txt'. Will then retreive the current slurm queue and present the user with 3 processes to run.
+On first usage will attempt to determine the name of the local cluster, saving it to 'location.txt' to be referenced by other scripts. This string can be changed manually if necessary. 
+
+Retreives the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
+'''
+ 1
+ Append the refcode of all local input directories to a .csv stored locally / on github
+
+ 2 
+ Extract data from local summary files and updates a .csv stored locally / on github
+ Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous 
+ batch to be processed when a new one is requested. Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
+
+ 3 
+ References and updates a .csv stored locally / on github to submit requests to slurm. Will only run calculations not flagged as previously batched.
+ Batches 'batchCount' every run to avoid requesting too many resources at once. 'batchCount' by default is the number of calculations that would lead to a slurm queue length of 16. 
+
+ 0
+ "Speed dial" for all processes in sequence
+ '''
+ 
+ It should be noted that if 2 and 3 attempt to modify a refcode not in the .csv they may crash, user discression is advised.
