@@ -157,7 +157,7 @@ for cif in cifFiles:
         f.write(f"#SBATCH --cpus-per-task=1\n")
         f.write(f"#SBATCH --mem=60G\n")
         f.write(f"#SBATCH --time={days}-23:59\n\n")
-        f.write(f"module load StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b\n\n")
+        f.write(f"module load {getModules()}\n\n")
         f.write(f"srun --cpus-per-task=$SLURM_CPUS_PER_TASK pw.x < {refcode}.in > {refcode}.out\n")
         f.write(f"srun --cpus-per-task=$SLURM_CPUS_PER_TASK gipaw.x < gipaw.{refcode}.in > gipaw.{refcode}.out\n")
     printToLog("# INFO - Compound [" + refcode + "] Created QE_SUB file at ["+QE_SUB+"]")
