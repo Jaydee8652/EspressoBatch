@@ -17,7 +17,7 @@ import math
 import datetime
 import time
 import pandas as pd
-from utils.generic_utils import printToLog as pl, createDirectory as cd
+from utils.generic_utils import printToLog as pl, createDirectory as cd, getModules
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -250,7 +250,7 @@ for cif in cifFiles:
 
     # Run test calculation
     testOutPath = os.path.join(refcodeDirectory, refcode+"_test.out")
-    testCommand = f"module load {modules}; pw.x < {qeInPath} > {testOutPath}"
+    testCommand = f"module load {getModules()}; pw.x < {qeInPath} > {testOutPath}"
     printToLog("# INFO - Compound [" + refcode + "] Running test command, ["+testCommand+"]")        
     try:
         subprocess.call(testCommand,shell=True)
