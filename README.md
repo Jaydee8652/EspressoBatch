@@ -63,7 +63,7 @@ Summary files are produced at the end of an sbatch calculation by 'post_processi
 
  - 3: 
 References and updates a .csv stored locally / on github to submit requests to slurm.
-Created 'REFCODE_batch.txt' to store the time and location of the batch.
+Creates 'REFCODE_batch.txt' to store the time and location of the batch.
 Will only run calculations not flagged as previously batched.
 
 Batches 'batchCount' every run to avoid requesting too many resources at once.
