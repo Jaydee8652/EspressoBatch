@@ -33,7 +33,7 @@ $ python3 _init.py
 ```
 $ python3 cif_sort.py
 ```
-On first usage will create the 'Original_CIFs' directory and request a structure_data.csv. The structure_data.csv can be obtained from the CSD, by saving a selection of structures as a TAB seperated values table and converting with excel or other .csv manager. Place corresponding .cif files in 'Original_CIFs', also obtained from the CSD and rerun. The sort should complete within a minute.
+On first run will create the 'Original_CIFs' directory and request a structure_data.csv. The structure_data.csv can be obtained from the CSD, by saving a selection of structures as a TAB seperated values table and converting with excel or other .csv manager. Place corresponding .cif files in 'Original_CIFs', also obtained from the CSD and rerun. The sort should complete within a minute.
 
 It should be noted that .cifs with "structure-formula mismatch" may contain an unreported cocrystal/solvent. Manual inspection of these files is encouraged.
 
@@ -45,7 +45,7 @@ Will generate quantum-espresso input files, automatically run a test calculation
 ```
 $ python3 batch_control.py
 ```
-On first usage will attempt to determine the name of the local cluster, saving it to 'location.txt' to be referenced by other scripts. This string can be changed manually if necessary. 
+On first run will attempt to determine the name of the local cluster, saving it to 'location.txt' to be referenced by other scripts. This string can be changed manually if necessary. 
 
 Displays the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
 ```
