@@ -75,4 +75,4 @@ Displays the final slurm queue once batching is complete
 "Speed dial" for all processes in sequence
  ```
  
- It should be noted that if 2 and 3 attempt to modify a refcode not in the .csv they may crash, user discression is advised.
+ It should be noted that if 2 and 3 attempt to modify a refcode not in the .csv they may crash.
