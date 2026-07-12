@@ -49,19 +49,19 @@ On first usage will attempt to determine the name of the local cluster, saving i
 
 Retreives the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
 ```
- 1
+ - 1:
  Append the refcode of all local input directories to a .csv stored locally / on github
 
- 2 
+ - 2: 
  Extract data from local summary files and updates a .csv stored locally / on github
  Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous 
  batch to be processed when a new one is requested. Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
 
- 3 
+ - 3: 
  References and updates a .csv stored locally / on github to submit requests to slurm. Will only run calculations not flagged as previously batched.
  Batches 'batchCount' every run to avoid requesting too many resources at once. 'batchCount' by default is the number of calculations that would lead to a slurm queue length of 16. 
 
- 0
+ - 0:
  "Speed dial" for all processes in sequence
  ```
  
