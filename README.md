@@ -28,7 +28,7 @@ $ python3 _init.py
 
 
 
-Usage instructions:
+# Usage instructions:
 
 ```
 $ python3 cif_sort.py
