@@ -48,7 +48,7 @@ $ python3 batch_control.py
 On first usage will attempt to determine the name of the local cluster, saving it to 'location.txt' to be referenced by other scripts. This string can be changed manually if necessary. 
 
 Retreives the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
-'''
+```
  1
  Append the refcode of all local input directories to a .csv stored locally / on github
 
@@ -63,6 +63,6 @@ Retreives the current slurm queue, determines the number of previously batched c
 
  0
  "Speed dial" for all processes in sequence
- '''
+ ```
  
  It should be noted that if 2 and 3 attempt to modify a refcode not in the .csv they may crash, user discression is advised.
