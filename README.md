@@ -53,7 +53,7 @@ Retreives the current slurm queue, determines the number of previously batched c
  Append the refcode of all local input directories to a .csv stored locally / on github
 
  - 2: 
- Extract data from local summary files and updates a .csv stored locally / on github
+ Extract data from local summary files and update a .csv stored locally / on github
  Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous 
  batch to be processed when a new one is requested. Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
 
