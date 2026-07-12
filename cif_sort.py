@@ -185,7 +185,7 @@ for refcode, filename in cifs.items():
                             #Increment a copy of the formula dict for every corresponding atom position, counts down for convenience
                             workingDict[elementSymbolLine] -= 1
 
-        #If the formula doesn't equal 0 (All atoms accounted for), or a negative multiple (Symmetry equivalent), discard TODO: Cannot account for co-crytsals.
+        #If the formula doesn't equal 0 (All atoms accounted for), or a negative multiple (Symmetry equivalent), discard TODO: Cannot account for unreported co-crytsals.
             if not all(workingDict.get(key) % formulaDict.get(key) == 0 and not workingDict.get(key) == formulaDict.get(key) for key in formulaDict):
                 if all(workingDict.get(key) == formulaDict.get(key) for key in formulaDict):
                     printToLog("# INFO - Compound [" + refcode + "] discarded. No structural data, all atoms unaccounted for: ["+ str(workingDict) +"]")

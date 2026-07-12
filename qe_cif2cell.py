@@ -77,10 +77,6 @@ else:
     psuedoElements = [file.split(".")[0] for file in pseudosFiles]
     printToLog("# INFO - Following elements accounted for ["+str(list(set(psuedoElements)))+"]")#Atoms with available pseudopotentials
 
-printToLog("# INFO - Enter atom types to optimise, with spaces between entries ('H O C'). Enter 'All' to optimise all atoms")
-atomsToOptimise = input(">")
-invalidInputs = []
-
 # Get structure data .csv
 structureDataPath = os.path.join(homeDirectory, "structure_data.csv")
 if os.path.exists(structureDataPath):
@@ -90,7 +86,12 @@ else:
     printToLog("# WARN - No .csv file found to load compound data. Copy .csv from the CSD to the following path ["+ structureDataPath + "]")
     quit()
 
-# Input sanitisation
+
+printToLog("# INFO - Enter atom types to optimise, with spaces between entries ('H O C'). Enter 'All' to optimise all atoms")
+atomsToOptimise = input(">")
+invalidInputs = []
+
+# Input sanitisation - user input of atoms to freeze
 regex = re.compile('[^a-zA-Z ]')
 atomsToOptimise = regex.sub('', atomsToOptimise).strip().split(" ")
 atomsToOptimise = list(set([atom.lower().capitalize() for atom in atomsToOptimise]))
@@ -159,7 +160,6 @@ for cif in cifFiles:
         f.write(f"module load StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b\n\n")
         f.write(f"srun --cpus-per-task=$SLURM_CPUS_PER_TASK pw.x < {refcode}.in > {refcode}.out\n")
         f.write(f"srun --cpus-per-task=$SLURM_CPUS_PER_TASK gipaw.x < gipaw.{refcode}.in > gipaw.{refcode}.out\n")
-        #srun --cpus-per-task=1 --ntasks=1 python3 test.py
     printToLog("# INFO - Compound [" + refcode + "] Created QE_SUB file at ["+QE_SUB+"]")
 
     # Run cif2cell file generation
@@ -250,7 +250,7 @@ for cif in cifFiles:
 
     # Run test calculation
     testOutPath = os.path.join(refcodeDirectory, refcode+"_test.out")
-    testCommand = f"module load StdEnv/2023 quantumespresso/7.3.1; pw.x < {qeInPath} > {testOutPath}"
+    testCommand = f"module load {modules}; pw.x < {qeInPath} > {testOutPath}"
     printToLog("# INFO - Compound [" + refcode + "] Running test command, ["+testCommand+"]")        
     try:
         subprocess.call(testCommand,shell=True)
@@ -288,7 +288,7 @@ for cif in cifFiles:
         if os.path.exists(QE_SUB):
             printToLog("# INFO - Compound [" + refcode + "] Updating QE_SUB to use values from test calculation")
 
-            postProcessingPath = os.path.join(homeDirectory, "post_processing.py")
+            post = os.path.join(os.path.join(homeDirectory,"utils"), "post_processing.py")
             with open(QE_SUB) as file:
                 lines = file.read().splitlines()
             with open(QE_SUB, "w") as file:
@@ -301,7 +301,7 @@ for cif in cifFiles:
                         print(re.sub("60", str(dynamicalRAM), line), file=file)
                     else:
                         print(line, file=file)
-                file.write(f"srun --cpus-per-task=1 --ntasks=1 python3 {postProcessingPath} {homeDirectory}")
+                file.write(f"srun --cpus-per-task=1 --ntasks=1 python3 {post} {homeDirectory}")
         else:
             printToLog("# WARN - Compound [" + refcode + "] No QE_SUB file found")
             failureCount += 1

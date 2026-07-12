@@ -1,6 +1,6 @@
 # reprocess.py - Jacob Duddridge
 
-# Runs post processing on all directories containing PWSCF and GIPAW .out files
+# Runs post_processing.py on all directories containing PWSCF and GIPAW .out files
 
 # All processes are reported to reprocess.log for debugging
 
@@ -14,10 +14,7 @@ import io
 import csv
 import datetime
 import time
-from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV
-
-#Params - can be modified
-batchCount = 1
+from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV, getModules
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -40,12 +37,12 @@ if numberOfDirectories == 0:
     printToLog("# WARN - No directories found in ["+ inputPath + "]")
     quit()
 else:
-    post = os.path.join(homeDirectory, "post_processing.py")
+    post = os.path.join(os.path.join(homeDirectory,"utils"), "post_processing.py")
     printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
     for refcode in directories:
         printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
         refcodeDirectory = os.path.join(inputPath, refcode)
-        batchCommand = f"module load StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b xtb/6.6.1; cd {refcodeDirectory}; python3 {post} {homeDirectory}"
+        batchCommand = f"module load {getModules()}; cd {refcodeDirectory}; python3 {post}"
         try:
             printToLog("# INFO - Compound ["+refcode+"] Rerunning post-processing")
             subprocess.call(batchCommand,shell=True)                                
