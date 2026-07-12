@@ -18,7 +18,6 @@ import sys
 from utils.generic_utils import *
 
 # Params - can be changed
-location = "Rorqual"
 REPO = "REPO_NAME" #https://github.com/Jaydee8652/REPO_NAME
 TOKEN = "github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000" #Must have permissions on repo
 
@@ -50,6 +49,27 @@ if not TOKEN == "github_pat_0000000000000000000000000000000000000000000000000000
             all_files.append(str(file).replace('ContentFile(path="','').replace('")',''))
     GIT_ACTIVE = True
 
+local_log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
+utils = os.path.join(homeDirectory, "utils")
+location = os.path.join(utils, "location.txt")
+if not os.path.exists(location): 
+    with open(location, "a") as file:
+        printToLog(local_log," --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - No location data found. Attempting to retreive.")    
+        try:
+            out = subprocess.check_output(['hostname'],shell=True)
+            out = out.decode("utf-8").strip()
+    
+            print(out,file=file)
+            printToLog(local_log,"# INFO - Location determined to be ["+str(out)+"], saved to ["+str(location)+"]")
+            printToLog(local_log,"# INFO - Override manually by changing the contents of ['location.txt']")
+        except subprocess.CalledProcessError as e:
+            printToLog(local_log,"# INFO - Error retreiving llocation data.")
+            printToLog(local_log,str(e))
+
+def getLocation():
+    with open(location, "r") as file:
+        return file.read().strip()
+
 # Set the flag on github
 def setFlag(log, boolean):
     source = log.split(".")[0]
@@ -74,7 +94,7 @@ def downloadCSV(log):
         if os.path.isfile(localSheet):
             printToLog(log, "# INFO - Removing existing local file ["+ localSheet + "]")
             os.remove(localSheet)# Clear current local copy
-        printToLog(log, "# INFO - Downloading ["+sheetPath+"] at ["+sheetPath+"] from [REPO - "+REPO+"]")
+        printToLog(log, "# INFO - Downloading ["+sheetPath+"] at ["+sheetPath+"] from [REPO - "+REPO+"] - DO NOT CANCEL")
         with open(localSheet, 'a') as file:
             file.write(gitContent)# Save data to local copy
         return localSheet
@@ -90,7 +110,7 @@ def uploadCSV(log):
         git = repo.get_contents(sheetPath)
     
         with open(localSheet, 'r') as file:
-            printToLog(log, "# INFO - Attempting to update ["+sheetPath+"] at ["+sheetPath+"] in [REPO - "+REPO+"]")
+            printToLog(log, "# INFO - Attempting to update ["+sheetPath+"] at ["+sheetPath+"] in [REPO - "+REPO+"] - DO NOT CANCEL")
             source = log.split(".")[0]
     
             localContent = file.read()
@@ -239,14 +259,14 @@ def batchCalculations(log, batchCount):
                         with open(batch_path, "a") as batch:
                             writeCSV(df, refcode, "[BATCH_done]", True)
                             writeCSV(df, refcode, "[BATCH_time]", now)
-                            writeCSV(df, refcode, "[BATCH_location]", location)
+                            writeCSV(df, refcode, "[BATCH_location]", getLocation())
                             
                             print("\n# -Batch data\n", file=batch)
                             print("BATCH_done = "+str(True), file=batch)
                             print("BATCH_time = "+str(now), file=batch)
-                            print("BATCH_location = "+str(location), file=batch)
+                            print("BATCH_location = "+str(getLocation()), file=batch)
                             
-                            printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(location)+"]")
+                            printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(getLocation())+"]")
                             processedCount += 1
                     except subprocess.CalledProcessError as e:
                         printToLog(log,"# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
@@ -259,9 +279,27 @@ def batchCalculations(log, batchCount):
     printToLog(log,"# INFO - ["+str(processedCount)+"] Calculations successfully batched.")
     if processedCount < batchCount:
         printToLog(log,"# INFO - No more calculations to batch!")
+    getQueue(log)
 
 
+def getQueue(log):
+    printToLog(log,"# INFO - Attempting to retrieve current slurm queue.")
+    length = 0
+    try:
+        out = subprocess.check_output(['squeue --me'],shell=True)
+        out = out.decode("utf-8")
     
+        lines = out.splitlines()
+        for line in lines:
+            if "_SUB" in line:
+                length += 1
+            printToLog(log, line)
+        printToLog(log,"# INFO - Slurm queue contains ["+str(length)+"] batched calculations.")
+        return length
+    except subprocess.CalledProcessError as e:
+        printToLog(log,"# INFO - Error retreiving slurm queue.")
+        printToLog(log,str(e))
+
 #Create sheet
 def initSheet(log):
     if os.path.isfile(localSheet):
@@ -307,3 +345,6 @@ def initSheet(log):
     df["[GIPAW_mscPPM]"] = ["1.1"]
     df["[GIPAW_msCorrection]"] = ["[['0.6667', '0.0000', '0.0000'], ['0.0000', '0.6667', '0.0000'], ['0.0000', '0.0000', '0.6667']]"]
     df.to_csv(localSheet, index=False)
+
+
+
