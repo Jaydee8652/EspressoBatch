@@ -1,10 +1,6 @@
 # Utility functions for reading and writing to a global csv stored on github
 
 #Imports
-from github import Auth
-from github import Github
-from github import GithubIntegration
-from github import Github
 import __main__ as main
 import os
 import subprocess
@@ -33,6 +29,10 @@ GIT_ACTIVE = False
 
 # Git Authentication
 if not TOKEN == "github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000" and not REPO == "REPO_NAME":
+    #Imports
+    from github import Auth
+    from github import Github
+    
     auth = Auth.Token(TOKEN)
     g = Github(auth=auth)
     g.get_user().login
