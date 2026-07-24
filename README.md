@@ -23,12 +23,6 @@ In the repository:
 -Create a new .txt file called 'sheet_flag.txt' in the home directory, containing the string 'True'
 ```
 
-Finally run the following command to populate the .csv with headers:
-```
-$ python3 _init.py
-```
-
-
 
 # Usage instructions:
 
