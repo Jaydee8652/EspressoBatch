@@ -8,7 +8,9 @@ $ pip install -r requirements.txt
 $ module load scipy-stack/2023b
 ```
 
-By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. Activating github integration:
+By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
+
+# Activating github integration:
 
 In 'utils.git_utils'
 ```
