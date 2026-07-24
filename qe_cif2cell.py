@@ -106,6 +106,7 @@ if len(invalidInputs) > 0:
 atomsToOptimise = [atom for atom in atomsToOptimise if atom not in invalidInputs]
 printToLog("# INFO - Following atom types selected to be optimised ["+str(atomsToOptimise)+"]")
 
+cifFiles = sorted(cifFiles)
 for cif in cifFiles:
     refcode = os.path.splitext(cif)[0]
     printToLog("# INFO - Compound [" + refcode + "] Processing .cif")

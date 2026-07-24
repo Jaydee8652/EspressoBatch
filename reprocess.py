@@ -14,7 +14,7 @@ import io
 import csv
 import datetime
 import time
-from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV, getModules
+from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV, getModules, isQueued
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -32,6 +32,7 @@ inputPath = os.path.join(homeDirectory, "Input_Files")
 createDirectory(inputPath, "# WARN - No directory found for input files.", True)
 directories = [directory for directory in os.listdir(inputPath) if os.path.isdir(os.path.join(inputPath, directory)) and not directory.startswith(".") and os.path.isfile(os.path.join(os.path.join(inputPath, directory), directory+".out")) and os.path.isfile(os.path.join(os.path.join(inputPath, directory), "gipaw."+directory+".out"))]
 
+directories = sorted(directories)
 numberOfDirectories = len(directories) # determine number of directories
 if numberOfDirectories == 0:
     printToLog("# WARN - No directories found in ["+ inputPath + "]")
@@ -41,13 +42,14 @@ else:
 
     printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
     for refcode in directories:
-        printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
-        refcodeDirectory = os.path.join(inputPath, refcode)
-        batchCommand = f"module load {getModules()}; cd {refcodeDirectory}; python3 {post}"
-        try:
-            printToLog("# INFO - Compound ["+refcode+"] Rerunning post-processing")
-            subprocess.call(batchCommand,shell=True)                                
-        except subprocess.CalledProcessError as e:
-            printToLog("# WARN - Compound ["+refcode+"] Error rerunning post-processing")
-            printToLog(str(e))
+        if not isQueued(log, refcode):
+            printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
+            refcodeDirectory = os.path.join(inputPath, refcode)
+            batchCommand = f"module load {getModules()}; cd {refcodeDirectory}; python3 {post}"
+            try:
+                printToLog("# INFO - Compound ["+refcode+"] Rerunning post-processing")
+                subprocess.call(batchCommand,shell=True)                                
+            except subprocess.CalledProcessError as e:
+                printToLog("# WARN - Compound ["+refcode+"] Error rerunning post-processing")
+                printToLog(str(e))
             

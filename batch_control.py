@@ -29,8 +29,8 @@ import csv
 import datetime
 import time       
 import sys
-from utils.generic_utils import printToLog as pl, createDirectory as cd
-from utils.git_utils import downloadCSV, uploadCSV, appendCSV, updateCSV, batchCalculations, verify, getQueue
+from utils.generic_utils import printToLog as pl, createDirectory as cd, getQueueLength
+from utils.git_utils import downloadCSV, uploadCSV, appendCSV, updateCSV, batchCalculations, verify
 
 #Params - can be modified
 batchTarget = 16
@@ -46,7 +46,7 @@ log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
 homeDirectory = os.getcwd()#Directory where we are
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
 
-current = getQueue(log)
+current = getQueueLength(log)
 batchCount = batchTarget - current
 
 printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2 3') to choose processes to perform.")
