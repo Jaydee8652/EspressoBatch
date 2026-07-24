@@ -18,6 +18,7 @@ import io
 import csv
 import datetime
 import time          
+from generic_utils import isQueued
 
 #Params - can be modified
 tolerance = 0.01
@@ -58,7 +59,8 @@ PWSCF_ecutwfc = ""
 PWSCF_ecutrho = "" 
 PWSCF_conv_thr = ""
 PWSCF_version = ""
-PWSCF_time = ""
+PWSCF_start_time = ""
+PWSCF_end_time = ""
 PWSCF_numberMPI = ""
 PWSCF_numberThreads = ""
 PWSCF_RG = ""
@@ -71,7 +73,8 @@ PWSCF_done = False
 
 GIPAW_q_gipaw = ""
 GIPAW_version = ""
-GIPAW_time = ""
+GIPAW_start_time = ""
+GIPAW_end_time = ""
 GIPAW_numberMPI = ""
 GIPAW_numberThreads = ""
 GIPAW_RG = ""
@@ -133,6 +136,14 @@ with open(summaryPath, "a") as summary:
     #REFCODE_batch.txt
     batch = os.path.join(refcodeDirectory, refcode+"_batch.txt")
     if os.path.isfile(batch):
+        now = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+        with open(batch) as file:
+            read = file.read()
+        with open(batch, "a") as file:
+            if not read.__contains__("BATCH_done") and isQueued(log, refcode):
+                print("BATCH_end_time = "+str(now), file=file)       
+                print("BATCH_done = "+str(True), file=file)            
         with open(batch) as file:
             lines = file.read().splitlines()
             for line in lines:
@@ -142,10 +153,12 @@ with open(summaryPath, "a") as summary:
         printToLog("# WARN - Compound ["+refcode+"] No batch file found")
 
     # Get .in
-    inPath = os.path.join(refcodeDirectory, refcode+".in")
-    if os.path.isfile(inPath):
+    pwscfIn = os.path.join(refcodeDirectory, refcode+".in")
+    if os.path.isfile(pwscfIn):
         print("\n# -PWSCF params-\n", file=summary)            
-        with open(inPath, "r") as file:
+        with open(pwscfIn, "r") as file:
+            reduction_factor = 1
+            
             start = 0
             end = 0
     
@@ -169,7 +182,11 @@ with open(summaryPath, "a") as summary:
                     PWSCF_conv_thr = line[line.find("=")+1:].strip()
 
                     print("PWSCF_conv_thr = "+str(PWSCF_conv_thr), file=summary)            
-    
+                elif "CELL_PARAMETERS {alat}" in line:
+                    temp = re.sub('\s{2,}', ' ', lines[number]).strip().split(" ")
+                    reduction_factor = temp[0]
+                    
+                    printToLog("# INFO - Compound ["+refcode+"] Reduced by a factor of ["+str(1/float(reduction_factor))+"]")
                 elif "ATOMIC_POSITIONS" in line:  
                     start = number
                 elif "K_POINTS automatic" in line:  
@@ -197,7 +214,7 @@ with open(summaryPath, "a") as summary:
                         
                         equivalents.append(str(equivalent))
                         
-                    unique = len(list(set(equivalents))) 
+                    unique = round(len(list(set(equivalents))) * float(reduction_factor))
                     symmetryEquivelents.append(unique)
                     curr += unique            
     else:
@@ -209,24 +226,20 @@ with open(summaryPath, "a") as summary:
     if os.path.isfile(pwscfOut):
         with open(pwscfOut) as file:
             print("\n# -PWSCF output-\n", file=summary)
-
-            lineNumber = 0
-            read = file.read()
+            
             lines = file.readlines()
-
-            for line in lines:
-                lineNumber += 1
+            for number, line in enumerate(lines, 1):                  
                 if "Program PWSCF" in line:
                     year = re.sub('\s{2,}', ' ', line.strip()).strip().split(" ")[5]
                     if len(year) < 9:
                         year = "0"+str(year)
                         
                     date = datetime.datetime.strptime(year+line.strip()[-8:].replace(" ", "0"), "%d%b%Y%H:%M:%S")
-                    PWSCF_time = date.strftime("%Y-%m-%d %H:%M:%S")
+                    PWSCF_start_time = date.strftime("%Y-%m-%d %H:%M:%S")
                     PWSCF_version = line.strip().split(" ")[2]
 
                     print("PWSCF_version = "+str(PWSCF_version), file=summary)
-                    print("PWSCF_time = "+str(PWSCF_time), file=summary)   
+                    print("PWSCF_start_time = "+str(PWSCF_start_time), file=summary)   
                 elif "Number of MPI processes" in line:
                     PWSCF_numberMPI = float(re.sub("[^0-9.]", "", line).strip())
 
@@ -253,6 +266,12 @@ with open(summaryPath, "a") as summary:
                     PWSCF_finalEnergy = float(re.sub("[^0-9.-]", "", line).strip())
                     
                     print("PWSCF_finalEnergy = "+str(PWSCF_finalEnergy), file=summary)
+                elif "This run was terminated on" in line:
+                    temp = line.strip()[-9:].replace(" ", "0")+line.strip()[-19:-9].strip().replace(" ", "0")
+                    date = datetime.datetime.strptime(temp, "%d%b%Y%H:%M:%S")
+                    PWSCF_end_time = date.strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    print("PWSCF_end_time = "+str(PWSCF_end_time), file=summary)                                       
                 elif "JOB DONE" in line:
                     PWSCF_done = True
                     print("PWSCF_done = "+str(PWSCF_done), file=summary) 
@@ -299,11 +318,11 @@ with open(summaryPath, "a") as summary:
                         year = "0"+str(year)
                         
                     date = datetime.datetime.strptime(year+line.strip()[-8:].replace(" ", "0"), "%d%b%Y%H:%M:%S")
-                    GIPAW_time = date.strftime("%Y-%m-%d %H:%M:%S")
+                    GIPAW_start_time = date.strftime("%Y-%m-%d %H:%M:%S")
                     GIPAW_version = line.strip().split(" ")[2]
                     
                     print("GIPAW_version = "+str(GIPAW_version), file=summary)
-                    print("GIPAW_time = "+str(GIPAW_time), file=summary)   
+                    print("GIPAW_start_time = "+str(GIPAW_start_time), file=summary)   
                 elif "Number of MPI processes" in line:
                     GIPAW_numberMPI = float(re.sub("[^0-9.]", "", line).strip())
 
@@ -329,7 +348,13 @@ with open(summaryPath, "a") as summary:
                     print("GIPAW_msCorrection = "+str(GIPAW_msCorrection), file=summary)
                 elif "Total sigma" in line:
                     if start == 0:
-                        start = number                
+                        start = number
+                elif "This run was terminated on" in line:
+                    temp = line.strip()[-9:].replace(" ", "0")+line.strip()[-19:-9].strip().replace(" ", "0")
+                    date = datetime.datetime.strptime(temp, "%d%b%Y%H:%M:%S")
+                    GIPAW_end_time = date.strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    print("GIPAW_end_time = "+str(GIPAW_end_time), file=summary)  
                 elif "JOB DONE" in line:
                     GIPAW_done = True
                     print("GIPAW_done = "+str(GIPAW_done), file=summary)
@@ -338,6 +363,7 @@ with open(summaryPath, "a") as summary:
                 print("# WARN - GIPAW did not run to completion", file=summary) 
                 printToLog("# WARN - Compound ["+refcode+"] GIPAW did not run to completion")
 
+            print("\n# -Sigma values-\n", file=summary)            
             sub = lines[start:]
             count = 0
             previous = -10

@@ -160,7 +160,8 @@ def appendCSV(log):
     inputPath = os.path.join(homeDirectory, "Input_Files")
     createDirectory(log, inputPath, "# WARN - No directory found for input files.", True)
     directories = [directory for directory in os.listdir(inputPath) if os.path.isdir(os.path.join(inputPath, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(inputPath, directory), "INCOMPLETE.txt"))]
-    
+
+    directories = sorted(directories)
     printToLog(log,"# INFO - The following input directories are available ["+str(directories)+"]")
     
     df = pd.read_csv(localSheet)
@@ -188,12 +189,13 @@ def updateCSV(log):
     summariesPath = os.path.join(homeDirectory, "Summary_Files")
     createDirectory(log,summariesPath, "# INFO - No directory found for summary files, creating at ["+str(summariesPath)+"]", False)
     summaryFiles = [file for file in os.listdir(summariesPath) if file.endswith('_summary.txt') and os.path.isfile(os.path.join(summariesPath, file))]#Get .UPFs from directory
+    summaryFiles = sorted(summaryFiles)
     printToLog(log,"# INFO - The following summaries are available ["+str(summaryFiles)+"]")
 
     df = pd.read_csv(localSheet)  
     df.set_index('[REFCODE]', inplace = True)
     df = df.astype(str)
-    
+
     for summary in summaryFiles:
         refcode = os.path.splitext(summary)[0].replace("_summary", "")
         printToLog(log,"# INFO - Compound ["+ refcode +"] Processing output data")
@@ -240,10 +242,11 @@ def batchCalculations(log, batchCount):
     df = pd.read_csv(localSheet)
     df.set_index('[REFCODE]', inplace = True)
 
+    directories = sorted(directories)
     for refcode in directories:
         if processedCount < batchCount:
             printToLog(log,"# INFO - Processing compound with refcode ["+ refcode +"]")
-            if not df.at[refcode, "[BATCH_done]"] == "True":
+            if not str(df.at[refcode, "[BATCH_started]"]) == "True":
                 printToLog(log,"# INFO - Compound with refcode ["+ refcode +"] not previously run, attempting to batch")
                 refcodeDirectory = os.path.join(inputPath, refcode)
                 
@@ -257,13 +260,13 @@ def batchCalculations(log, batchCount):
                         subprocess.call(batchCommand,shell=True)
                         
                         with open(batch_path, "a") as batch:
-                            writeCSV(df, refcode, "[BATCH_done]", True)
-                            writeCSV(df, refcode, "[BATCH_time]", now)
+                            writeCSV(df, refcode, "[BATCH_started]", True)
+                            writeCSV(df, refcode, "[BATCH_start_time]", now)
                             writeCSV(df, refcode, "[BATCH_location]", getLocation())
                             
                             print("\n# -Batch data\n", file=batch)
-                            print("BATCH_done = "+str(True), file=batch)
-                            print("BATCH_time = "+str(now), file=batch)
+                            print("BATCH_started = "+str(True), file=batch)
+                            print("BATCH_start_time = "+str(now), file=batch)
                             print("BATCH_location = "+str(getLocation()), file=batch)
                             
                             printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(getLocation())+"]")
@@ -274,32 +277,13 @@ def batchCalculations(log, batchCount):
                 else:
                     printToLog(log,"# WARN - QE_SUB not present for compound with refcode ["+refcode+"]")
             else:
-                printToLog(log,"# INFO - Compound with refcode ["+refcode+"] has been previously batched at ["+str(df.at[refcode, "[BATCH_time]"])+"] on ["+str(df.at[refcode, "[BATCH_location]"])+"]")  
+                printToLog(log,"# INFO - Compound with refcode ["+refcode+"] has been previously batched at ["+str(df.at[refcode, "[BATCH_start_time]"])+"] on ["+str(df.at[refcode, "[BATCH_location]"])+"]")  
     df.to_csv(localSheet)#Update local csv
     printToLog(log,"# INFO - ["+str(processedCount)+"] Calculations successfully batched.")
     if processedCount < batchCount:
         printToLog(log,"# INFO - No more calculations to batch!")
-    getQueue(log)
-
-
-def getQueue(log):
-    printToLog(log,"# INFO - Attempting to retrieve current slurm queue.")
-    length = 0
-    try:
-        out = subprocess.check_output(['squeue --me'],shell=True)
-        out = out.decode("utf-8")
-    
-        lines = out.splitlines()
-        for line in lines:
-            if "_SUB" in line:
-                length += 1
-            printToLog(log, line)
-        printToLog(log,"# INFO - Slurm queue contains ["+str(length)+"] batched calculations.")
-        return length
-    except subprocess.CalledProcessError as e:
-        printToLog(log,"# INFO - Error retreiving slurm queue.")
-        printToLog(log,str(e))
-
+    getQueueLength(log)
+        
 #Create sheet
 def initSheet(log):
     if os.path.isfile(localSheet):

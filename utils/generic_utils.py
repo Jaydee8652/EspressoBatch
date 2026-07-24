@@ -5,9 +5,10 @@ import datetime
 import time
 import os
 import shutil
+import subprocess
 
 # Params - can be changed
-modules = "StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b xtb/6.6.1"
+modules = "StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b xtb/6.6.1 openbabel/3.1.1"
 
 
 logs = os.path.join(os.getcwd(), "logs")
@@ -46,3 +47,37 @@ def writeCSV(df, refcode, location, value):
 def getModules():
     return modules 
 
+#Get and decode the current slurm queue. Can be read like a file
+def getQueue(log):
+    printToLog(log,"# INFO - Attempting to retrieve current slurm queue.")
+    try:
+        out = subprocess.check_output(['squeue --me'],shell=True)
+        out = out.decode("utf-8")
+        return out
+    except subprocess.CalledProcessError as e:
+        printToLog(log,"# INFO - Error retreiving slurm queue.")
+        printToLog(log,str(e))
+
+#Get the length of the current slurm queue
+def getQueueLength(log):
+    printToLog(log,"# INFO - Attempting to get the length of current slurm queue.")
+
+    length = 0
+    lines = getQueue(log).splitlines()
+    for line in lines:
+        if "_SUB" in line:
+            length += 1
+        printToLog(log, line)
+    printToLog(log,"# INFO - Slurm queue contains ["+str(length)+"] batched calculations.")
+    return length
+
+#Check if a specific refcode is in the queue
+def isQueued(log, refcode):
+    printToLog(log,"# INFO - Compound ["+refcode+"] Checking queue")
+    lines = getQueue(log).splitlines()
+    for line in lines:
+        if refcode+"_SUB" in line:
+            printToLog(log,"# INFO - Compound ["+refcode+"] is currently queued.")
+            return True
+    printToLog(log,"# INFO - Compound ["+refcode+"] is not currently queued.")
+    return False
