@@ -43,12 +43,10 @@ On first run will create the 'Original_CIFs' directory, place .cif files in 'Ori
 If the .cifs are from the Cambridge Structural Database, the 'structure_data.csv' can be obtained from the CSD. This can be done by saving a selection of structures as a TAB separated values table and converting with excel or other .csv manager. Without a provided 'structure_data.csv' the filtering settings that require it will be forcibly disabled if selected.
 ```
  - 1:
-Discard structures with r factor greater than [{rCap} (default: 10)]
-This data is stored in 'structure_data.csv'
+Discard structures with r factor greater than [{rCap} (default: 10)] (This data is stored in 'structure_data.csv')
 
  - 2: 
-Discard structures flagged as disordered by their CSD author
-This data is stored in 'structure_data.csv'
+Discard structures flagged as disordered by their CSD author (This data is stored in 'structure_data.csv')
 
  - 3: 
 Discard structures with volume greater than [{volumeCap} (default: 6000)]
