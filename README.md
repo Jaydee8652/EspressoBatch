@@ -9,7 +9,7 @@ $ pip install -r requirements.txt
 $ module load scipy-stack/2023b
 ```
 
-Once downloaded, enter 'utils.params.py' 
+Once downloaded, enter 'utils/params.py' 
 
 ```
 -Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
@@ -20,7 +20,7 @@ Once downloaded, enter 'utils.params.py'
 # You can now run calculations!
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
-To activate this feature, enter 'utils.params.py' 
+To activate this feature, enter 'utils/params.py' 
 
 ```
 -Replace the value for "param_repo" with the name of a github repository you control
@@ -71,10 +71,33 @@ Discard structures with unreported cocrystals/solvent
 
 Once the sort is complete, .cifs are moved to directories within the 'cifs' directory corresponding to to their reason for discard The 'Original_Cifs' is then moved to this directory. Running the script again will create a new 'Original_Cifs' to start the process again, previously sorted .cifs will not be overriden.
 
+
+```
+$ python3 sanity_check.py
+```
+Intended for use in crystal structure prediction. Not necessary for .cifs obtained from the Cambridge Structural Database. Creates the 'Sanity_Input_Files' directory and presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
+```
+ - 1:
+Will generate quantum-espresso input files for each validated .cif to perform a "sanity check".
+(Fast sfc calculation with a single K point to quickly estimate energy, each sanity check takes roughly 3 minutes to complete)
+
+ - 2: 
+Batches [{batchTarget} (default: 100)] new sanity check calculations to slurm in a single job to run in sequence.
+Logs which checks have already been batched and will not repeat work. Relatively lightweight, multiple jobs can be run in parallel.
+
+Summary files are produced at the end of each calculation by 'extract_energy.py'
+Saves the final energy to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and Kcal mol^-1 molecule^-1. 
+
+ - 0:
+"Speed dial" for all processes in sequence
+ ```
+
+The energies of each refcode can then be inspected manually, and those considered implausible removed from 'cifs/validated' to avoid wasting effort.
+
 ```
 $ python3 qe_cif2cell.py
 ```
-Will generate quantum-espresso input files, automatically run a test calculation, and then update the slurm request according to the projected resource use.
+Will generate quantum-espresso input files from .cifs in 'cifs/validated', automatically run a test calculation, and then update the slurm request according to the projected resource use.
 
 ```
 $ python3 batch_control.py
