@@ -86,8 +86,6 @@ GIPAW_done = False
 
 #Main
 log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
-
-#homeDirectory = sys.argv[1]
 refcodeDirectory = os.getcwd()#Directory where we are
 homeDirectory = os.path.split(os.path.split(refcodeDirectory)[0])[0]
 

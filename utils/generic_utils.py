@@ -6,10 +6,7 @@ import time
 import os
 import shutil
 import subprocess
-
-# Params - can be changed
-modules = "StdEnv/2023 quantumespresso/7.3.1 scipy-stack/2023b xtb/6.6.1 openbabel/3.1.1"
-
+import numpy as np
 
 logs = os.path.join(os.getcwd(), "logs")
 if not os.path.exists(logs):
@@ -44,8 +41,8 @@ def writeCSV(df, refcode, location, value):
     if not value == "":
         df.loc[refcode, location] = value
 
-def getModules():
-    return modules 
+def cellVolume(cell_a, cell_b, cell_c, cell_α, cell_β, cell_γ):
+    return cell_a * cell_b * cell_c * np.sqrt((1 - (np.cos(cell_α) ** 2) - (np.cos(cell_β) ** 2) - (np.cos(cell_γ)) ** 2) + (2 * np.cos(cell_α) * np.cos(cell_β) * np.cos(cell_γ)))
 
 #Get and decode the current slurm queue. Can be read like a file
 def getQueue(log):

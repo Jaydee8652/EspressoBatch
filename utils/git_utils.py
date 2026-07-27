@@ -12,32 +12,26 @@ import datetime
 import time
 import sys
 from utils.generic_utils import *
-
-# Params - can be changed
-REPO = "REPO_NAME" #https://github.com/Jaydee8652/REPO_NAME
-TOKEN = "github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000" #Must have permissions on repo
-
-sheetPath = 'sheet.csv'
-flagPath = 'sheet_flag.txt'
+from utils.params import *
 
 #Main
 homeDirectory = os.getcwd()#Directory where we are
-localSheet = os.path.join(homeDirectory, sheetPath)
-localFlag = os.path.join(homeDirectory, flagPath)
+localSheet = os.path.join(homeDirectory, param_sheetPath)
+localFlag = os.path.join(homeDirectory, param_flagPath)
 
 GIT_ACTIVE = False
 
 # Git Authentication
-if not TOKEN == "github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000" and not REPO == "REPO_NAME":
+if not param_token == "github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000" and not param_repo == "REPO_NAME":
     #Imports
     from github import Auth
     from github import Github
     
-    auth = Auth.Token(TOKEN)
+    auth = Auth.Token(param_token)
     g = Github(auth=auth)
     g.get_user().login
     
-    repo = g.get_user().get_repo(REPO)
+    repo = g.get_user().get_repo(param_repo)
     all_files = []
     contents = repo.get_contents("")
     while contents:
@@ -74,8 +68,8 @@ def getLocation():
 def setFlag(log, boolean):
     source = log.split(".")[0]
 
-    if flagPath in all_files:
-        flag = repo.get_contents(flagPath)
+    if param_flagPath in all_files:
+        flag = repo.get_contents(param_flagPath)
         if os.path.isfile(localFlag):
             os.remove(localFlag)        
         with open(localFlag, "w") as file:
@@ -89,17 +83,17 @@ def setFlag(log, boolean):
 #Download csv from github
 def downloadCSV(log):
     if GIT_ACTIVE:
-        gitContent = repo.get_contents(sheetPath).decoded_content.decode()
+        gitContent = repo.get_contents(param_sheetPath).decoded_content.decode()
     
         if os.path.isfile(localSheet):
             printToLog(log, "# INFO - Removing existing local file ["+ localSheet + "]")
             os.remove(localSheet)# Clear current local copy
-        printToLog(log, "# INFO - Downloading ["+sheetPath+"] at ["+sheetPath+"] from [REPO - "+REPO+"] - DO NOT CANCEL")
+        printToLog(log, "# INFO - Downloading ["+param_sheetPath+"] at ["+param_sheetPath+"] from [REPO - "+param_repo+"] - DO NOT CANCEL")
         with open(localSheet, 'a') as file:
             file.write(gitContent)# Save data to local copy
         return localSheet
     else:
-        printToLog(log, "# INFO - Git integration inactive. Retreiving local .csv ["+sheetPath+"]")
+        printToLog(log, "# INFO - Git integration inactive. Retreiving local .csv ["+param_sheetPath+"]")
         return localSheet
 
 
@@ -107,30 +101,30 @@ def downloadCSV(log):
 #Upload csv to github
 def uploadCSV(log):
     if GIT_ACTIVE:
-        git = repo.get_contents(sheetPath)
+        git = repo.get_contents(param_sheetPath)
     
         with open(localSheet, 'r') as file:
-            printToLog(log, "# INFO - Attempting to update ["+sheetPath+"] at ["+sheetPath+"] in [REPO - "+REPO+"] - DO NOT CANCEL")
+            printToLog(log, "# INFO - Attempting to update ["+param_sheetPath+"] at ["+param_sheetPath+"] in [REPO - "+param_repo+"] - DO NOT CANCEL")
             source = log.split(".")[0]
     
             localContent = file.read()
             repo.update_file(git.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" [sheet.csv]", localContent, git.sha)#Update global .csv
             setFlag(log, "True")
-            printToLog(log, "# INFO - Updated ["+sheetPath+"] at ["+sheetPath+"] in [REPO - "+REPO+"]")
+            printToLog(log, "# INFO - Updated ["+param_sheetPath+"] at ["+param_sheetPath+"] in [REPO - "+param_repo+"]")
             if os.path.isfile(localSheet):
                 os.remove(localSheet)# Clear current local copy
     else:
-        printToLog(log, "# INFO - Git integration inactive. Updated local .csv ["+sheetPath+"]")
+        printToLog(log, "# INFO - Git integration inactive. Updated local .csv ["+param_sheetPath+"]")
 
 
     
 # Reference the flag on github, ensures the global .csv is not altered by two scripts at once
 def verify(log):
     if GIT_ACTIVE:
-        if sheetPath in all_files and flagPath in all_files:
+        if param_sheetPath in all_files and param_flagPath in all_files:
             printToLog(log, "# INFO - Requesting master .csv")
-            flag = repo.get_contents(flagPath)
-            flagContent = repo.get_contents(flagPath).decoded_content.decode()
+            flag = repo.get_contents(param_flagPath)
+            flagContent = repo.get_contents(param_flagPath).decoded_content.decode()
             if(flagContent.strip() == "True"):
                 printToLog(log, "# INFO - Master .csv availabile")
                 setFlag(log, "False")
@@ -253,7 +247,7 @@ def batchCalculations(log, batchCount):
                 QE_SUB = os.path.join(refcodeDirectory, "QE_SUB")
                 batch_path = os.path.join(refcodeDirectory, refcode+"_batch.txt")
 
-                batchCommand = f"module load {getModules()}; cd {refcodeDirectory}; sbatch QE_SUB"
+                batchCommand = f"module load {param_modules}; cd {refcodeDirectory}; sbatch QE_SUB"
                 if os.path.exists(QE_SUB):
                     try:
                         now = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
