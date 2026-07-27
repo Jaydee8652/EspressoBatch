@@ -72,7 +72,7 @@ Discard structures with unreported cocrystals/solvent
 "Speed dial" for all filters in sequence
  ```
 
-Once the sort is complete .cifs are moved to directories within the 'cifs' directory corresponding to to their reason for discard. The 'Original_Cifs' is also moved to this directory. Running the script again will create a new 'Original_Cifs' to start the process again, previously sorted .cifs will not be overriden.
+Once the sort is complete .cifs are moved to directories within the 'cifs' directory corresponding to to their reason for discard. The 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again, previously sorted .cifs will not be overriden.
 
 
 ```
