@@ -8,14 +8,24 @@ $ pip install -r requirements.txt
 $ module load scipy-stack/2023b
 ```
 
+Once downloaded, enter 'utils.params.py' 
+
+```
+-Replace the value for "param_email" with the name of an email you control.
+-Slurm outputs will be forwarded to this email unless "param_slurmVerbosity" is set to "NONE"
+
+-Replace the value for "param_account" with your account on the cluster
+```
+
+#You can now run calculations!
+
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
-# Activating github integration:
+To activate this feature, enter 'utils.params.py' 
 
-In 'utils.git_utils'
 ```
--Replace the value for "REPO" with the name of a github repository you control
--Replace the value for "TOKEN" with an auth token that has read and write permissions on said repo
+-Replace the value for "param_repo" with the name of a github repository you control
+-Replace the value for "param_token" with an auth token that has read and write permissions on said repo
 ```
 In the repository:
 ```
@@ -29,9 +39,9 @@ In the repository:
 ```
 $ python3 cif_sort.py
 ```
-On first run will create the 'Original_CIFs' directory and request a structure_data.csv. The structure_data.csv can be obtained from the CSD, by saving a selection of structures as a TAB seperated values table and converting with excel or other .csv manager. Place corresponding .cif files in 'Original_CIFs', also obtained from the CSD and rerun. The sort should complete within a minute.
+On first run will create the 'Original_CIFs' directory, place .cif files in 'Original_CIFs' and rerun. The user will be presented with different filtering settings, some will be disabled without a 'structure_data.csv'. Any combination of these filters can be run through an integer input. 
 
-It should be noted that .cifs with "structure-formula mismatch" may contain an unreported cocrystal/solvent. Manual inspection of these files is encouraged.
+If the .cifs are from the Cambridge Structural Database, the 'structure_data.csv' can be obtained from the CSD. This can be done by saving a selection of structures as a TAB separated values table and converting with excel or other .csv manager. Without a provided 'structure_data.csv' the filtering settings that require it will be forcibly disabled if selected.
 
 ```
 $ python3 qe_cif2cell.py
