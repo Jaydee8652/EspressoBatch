@@ -124,8 +124,8 @@ References and updates a .csv stored locally / on github to submit requests to s
 Creates 'REFCODE_batch.txt' to store the time and location of the batch.
 Will only run calculations not flagged as previously batched.
 
-Batches 'batchCount' every run to avoid requesting too many resources at once.
-'batchCount' by default is the number of calculations that would lead to a slurm queue length of 16. 
+Batches [batchCount] every run to avoid requesting too many resources at once.
+[batchCount] by default is the number of calculations that would lead to a slurm queue length of 16. 
 
 Displays the final slurm queue once batching is complete
 
