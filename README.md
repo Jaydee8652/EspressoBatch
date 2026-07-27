@@ -18,6 +18,10 @@ Edit 'params.py'
 -The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 ```
 
+```
+$ cd ..
+```
+
 On the first run of some scripts they will attempt to determine the name of the local cluster, saving it to 'utils/location.txt'. This string can be changed manually if necessary. 
 
 # You can now run calculations!
