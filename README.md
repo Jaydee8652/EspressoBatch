@@ -83,7 +83,8 @@ Will generate quantum-espresso input files for each validated .cif to perform a 
 
  - 2: 
 Batches [{batchTarget} (default: 100)] new sanity check calculations to slurm in a single job to run in sequence.
-Logs which checks have already been batched and will not repeat work. Relatively lightweight, multiple jobs can be run in parallel.
+Logs which checks have already been batched and will not repeat work.
+Relatively lightweight, multiple slurm jobs can be run in parallel.
 
 Summary files are produced at the end of each calculation by 'extract_energy.py'
 Saves the final energy to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and Kcal mol^-1 molecule^-1. 
