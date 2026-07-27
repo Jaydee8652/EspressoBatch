@@ -78,7 +78,7 @@ $ python3 sanity_check.py
 Intended for use in crystal structure prediction. Not necessary for .cifs obtained from the Cambridge Structural Database. Creates the 'Sanity_Input_Files' directory and presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
 ```
  - 1:
-Will generate quantum-espresso input files for each validated .cif to perform a "sanity check".
+Will generate quantum-espresso input files from .cifs in 'cifs/validated' to perform a "sanity check".
 (sfc calculation with a single K point to estimate energy, each sanity check takes roughly 3 minutes to complete)
 
  - 2: 
