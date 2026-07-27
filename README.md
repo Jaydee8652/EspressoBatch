@@ -1,7 +1,6 @@
 Designed for use on Digital Research Alliance of Canada clusters.
 
 # To activate:
-
 Run the following commands:
 ```
 $ git clone https://github.com/Jaydee8652/EspressoBatch.git
@@ -19,7 +18,6 @@ Once downloaded, enter 'utils.params.py'
 ```
 
 # You can now run calculations!
-
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
 To activate this feature, enter 'utils.params.py' 
