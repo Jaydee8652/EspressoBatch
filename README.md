@@ -41,7 +41,7 @@ In the repository:
 ```
 $ python3 cif_sort.py
 ```
-On first run will create the 'Original_Cifs' directory, place .cif files in 'Original_CIFs' and rerun. The user will be presented with different filtering settings, some will be disabled without a 'structure_data.csv'. Any combination of these filters can be run through an integer input. 
+On first run will create the 'original_cifs' directory, place .cif files in 'original_cifs' and rerun. The user will be presented with different filtering settings, some will be disabled without a 'structure_data.csv'. Any combination of these filters can be run through an integer input. 
 
 If the .cifs are from the Cambridge Structural Database, the 'structure_data.csv' can be obtained from the CSD. This can be done by saving a selection of structures as a TAB separated values table and converting with excel or other .csv manager. Without a provided 'structure_data.csv' the filtering settings that require it will be forcibly disabled if selected.
 ```
