@@ -69,6 +69,8 @@ Discard structures with unreported cocrystals/solvent
 "Speed dial" for all filters in sequence
  ```
 
+Once the sort is complete, cifs are moved to directories within the 'cifs' directory corresponding to to their reason for discard The 'Original_Cifs' is then moved to this directory. Running the script again will create a new 'Original_Cifs' for more .cifs to sort.
+
 ```
 $ python3 qe_cif2cell.py
 ```
