@@ -79,7 +79,7 @@ Intended for use in crystal structure prediction. Not necessary for .cifs obtain
 ```
  - 1:
 Will generate quantum-espresso input files for each validated .cif to perform a "sanity check".
-(Fast sfc calculation with a single K point to quickly estimate energy, each sanity check takes roughly 3 minutes to complete)
+(sfc calculation with a single K point to estimate energy, each sanity check takes roughly 3 minutes to complete)
 
  - 2: 
 Batches [{batchTarget} (default: 100)] new sanity check calculations to slurm in a single job to run in sequence.
