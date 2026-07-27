@@ -14,7 +14,8 @@ import io
 import csv
 import datetime
 import time
-from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV, getModules, isQueued
+from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV, isQueued
+from utils.params import *
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -45,11 +46,12 @@ else:
         if not isQueued(log, refcode):
             printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
             refcodeDirectory = os.path.join(inputPath, refcode)
-            batchCommand = f"module load {getModules()}; cd {refcodeDirectory}; python3 {post}"
+            batchCommand = f"module load {param_modules}; cd {refcodeDirectory}; python3 {post}"
             try:
                 printToLog("# INFO - Compound ["+refcode+"] Rerunning post-processing")
                 subprocess.call(batchCommand,shell=True)                                
             except subprocess.CalledProcessError as e:
                 printToLog("# WARN - Compound ["+refcode+"] Error rerunning post-processing")
                 printToLog(str(e))
+
             

@@ -16,10 +16,11 @@ import io
 import csv
 import datetime
 import time
-from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV, getModules, isQueued
+from utils.generic_utils import printToLog as pl, createDirectory as cd, writeCSV, isQueued
 import shutil
 import numpy as np
 import math
+from utils.params import *
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -210,7 +211,7 @@ else:
 
                     printToLog("# INFO - Compound ["+refcode+"] Attempting to create _super.mol2")
                     try:
-                        subprocess.call(f"module load {getModules()}; cd {refcodeDirectory}; obabel -i cif {refcode}_opt.cif -o mol2 -O {refcode}_super.mol2",shell=True)
+                        subprocess.call(f"module load {param_modules}; cd {refcodeDirectory}; obabel -i cif {refcode}_opt.cif -o mol2 -O {refcode}_super.mol2",shell=True)
                         printToLog("# INFO - Compound ["+refcode+"] Successfully created _super.mol2")
 
                         if os.path.isfile(super_mol2):
