@@ -11,9 +11,9 @@ $ module load scipy-stack/2023b
 Once downloaded, enter 'utils.params.py' 
 
 ```
--Replace the value for "param_email" with the name of an email you control.
--Slurm outputs will be forwarded to this email unless "param_slurmVerbosity" is set to "NONE"
+-Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
 -Replace the value for "param_account" with your account on the cluster
+-The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 ```
 
 #You can now run calculations!
