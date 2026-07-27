@@ -21,8 +21,8 @@ def createDirectory(path, text, exit):
 
 #Params - can be changed
 
-ecutwfc = 30.0
-ecutrho = 240.0
+ecutwfc = 55.0
+ecutrho = 440.0
 conv_thr = "1.D-6"
 
 batchTarget = 100
