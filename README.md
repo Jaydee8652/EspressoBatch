@@ -7,9 +7,10 @@ $ git clone https://github.com/Jaydee8652/EspressoBatch.git
 $ cd EspressoBatch/
 $ pip install -r requirements.txt
 $ module load scipy-stack/2023b
+$ cd utils
 ```
 
-Once downloaded, enter 'utils/params.py' 
+Enter 'utils/params.py' 
 
 ```
 -Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
