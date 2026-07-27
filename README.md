@@ -17,6 +17,8 @@ Once downloaded, enter 'utils/params.py'
 -The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 ```
 
+On the first of some scripts they will attempt to determine the name of the local cluster, saving it to 'location.txt'. This string can be changed manually if necessary. 
+
 # You can now run calculations!
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
@@ -103,8 +105,6 @@ Will generate quantum-espresso input files from .cifs in 'cifs/validated', autom
 ```
 $ python3 batch_control.py
 ```
-On first run will attempt to determine the name of the local cluster, saving it to 'location.txt' to be referenced by other scripts. This string can be changed manually if necessary. 
-
 Displays the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
 ```
  - 1:
