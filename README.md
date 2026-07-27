@@ -1,6 +1,8 @@
 Designed for use on Digital Research Alliance of Canada clusters.
 
-To activate, run the following commands:
+# To activate:
+
+Run the following commands:
 ```
 $ git clone https://github.com/Jaydee8652/EspressoBatch.git
 $ cd EspressoBatch/
