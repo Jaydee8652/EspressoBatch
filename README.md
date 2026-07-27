@@ -38,7 +38,7 @@ In the repository:
 ```
 $ python3 cif_sort.py
 ```
-On first run will create the 'Original_CIFs' directory, place .cif files in 'Original_CIFs' and rerun. The user will be presented with different filtering settings, some will be disabled without a 'structure_data.csv'. Any combination of these filters can be run through an integer input. 
+On first run will create the 'Original_Cifs' directory, place .cif files in 'Original_CIFs' and rerun. The user will be presented with different filtering settings, some will be disabled without a 'structure_data.csv'. Any combination of these filters can be run through an integer input. 
 
 If the .cifs are from the Cambridge Structural Database, the 'structure_data.csv' can be obtained from the CSD. This can be done by saving a selection of structures as a TAB separated values table and converting with excel or other .csv manager. Without a provided 'structure_data.csv' the filtering settings that require it will be forcibly disabled if selected.
 ```
@@ -69,7 +69,7 @@ Discard structures with unreported cocrystals/solvent
 "Speed dial" for all filters in sequence
  ```
 
-Once the sort is complete, cifs are moved to directories within the 'cifs' directory corresponding to to their reason for discard The 'Original_Cifs' is then moved to this directory. Running the script again will create a new 'Original_Cifs' for more .cifs to sort.
+Once the sort is complete, cifs are moved to directories within the 'cifs' directory corresponding to to their reason for discard The 'Original_Cifs' is then moved to this directory. Running the script again will create a new 'Original_Cifs' to start the process again, previously sorted .cifs will not be overriden.
 
 ```
 $ python3 qe_cif2cell.py
