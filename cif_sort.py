@@ -173,6 +173,8 @@ if dataAvailable and choices.__contains__(OPT_R_VAL) or choices.__contains__(OPT
 
 unaccountedElements = {}
 for refcode, filename in cifs.items():
+    unaccounted = []
+
     with open(os.path.join(original_cifs, filename), "r") as cif:
         printToLog("# INFO - Compound [" + refcode + "] Processing .cif file")
         formula_dict = {}
@@ -198,7 +200,6 @@ for refcode, filename in cifs.items():
                     regex = re.compile('[^a-zA-Z ]')
                     atoms = list(set([atom.lower().capitalize() for atom in regex.sub('', formula).strip().split(" ")]))
 
-                    unaccounted = []
                     printToLog("# INFO - Compound [" + refcode + "] Found to contain the following atom types: ["+ str(atoms) +"]")
                     for atom in atoms:
                         if not psuedo_elements.__contains__(atom):
