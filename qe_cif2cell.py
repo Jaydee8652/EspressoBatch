@@ -17,7 +17,8 @@ import math
 import datetime
 import time
 import pandas as pd
-from utils.generic_utils import printToLog as pl, createDirectory as cd, getModules, cellVolume
+from utils.generic_utils import printToLog as pl, createDirectory as cd, cellVolume
+from utils.params import *
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -69,7 +70,7 @@ else:
     printToLog("# INFO - Following elements accounted for ["+str(list(set(psuedo_elements)))+"]")
 
 #Make sure there is a directory for the generated input files
-inputPath = os.path.join(homeDirectory, "Input_Files_TEST")
+inputPath = os.path.join(homeDirectory, "Input_Files")
 if os.path.exists(inputPath) and archive:
     now = str(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     printToLog("# INFO - Archiving existing file for input directories ["+ inputPath + "]")
@@ -224,7 +225,7 @@ for refcode, filename in cifs.items():
         # Run test calculation
         testOutPath = os.path.join(refcodeDirectory, refcode+"_test.out")
         try:
-            subprocess.run(f"module load {getModules()}; pw.x < {in_path} > {testOutPath}",shell=True)
+            subprocess.run(f"module load {param_modules}; pw.x < {in_path} > {testOutPath}",shell=True)
             printToLog("# INFO - Compound [" + refcode + "] Successfully ran test command")
         except subprocess.CalledProcessError as e:
             printToLog("# WARN - Compound [" + refcode + "] Error running test command")
@@ -281,7 +282,7 @@ for refcode, filename in cifs.items():
 #SBATCH --mem={dynamicalRAM}G
 #SBATCH --time={days}-23:59
 
-module load {getModules()}
+module load {param_modules}
 
 srun --cpus-per-task=$SLURM_CPUS_PER_TASK pw.x < {refcode}.in > {refcode}.out
 srun --cpus-per-task=$SLURM_CPUS_PER_TASK gipaw.x < gipaw.{refcode}.in > gipaw.{refcode}.out
