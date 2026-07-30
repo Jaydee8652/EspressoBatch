@@ -93,7 +93,7 @@ Batches all sanity check calculations to slurm. These calculations are grouped j
 Logs which checks have already been batched and will not repeat work.
 
 Summary files are produced at the end of each calculation by 'extract_energy.py'
-Saves the final energy to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and Kcal mol^-1 molecule^-1. 
+Saves the final energy to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
  ```
 
 The energies of each refcode can then be inspected manually, and those considered implausible removed from 'cifs/validated' to avoid wasting effort.
