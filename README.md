@@ -82,7 +82,7 @@ Once the sort is complete .cifs are moved to directories within the 'cifs' direc
 ```
 $ python3 sanity_check.py
 ```
-Intended for use in crystal structure prediction. Not necessary for .cifs obtained from the Cambridge Structural Database. Creates the 'Sanity_Input_Files' directory and presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
+Intended for use in crystal structure prediction. Not necessary for .cifs obtained from the Cambridge Structural Database. Creates the 'Sanity_Input_Files' directory and presents the user with 2 processes to run.
 ```
  - 1:
 Will generate quantum-espresso input files from .cifs in 'cifs/validated' to perform a "sanity check".
@@ -95,9 +95,6 @@ Relatively lightweight, multiple slurm jobs can be run in parallel.
 
 Summary files are produced at the end of each calculation by 'extract_energy.py'
 Saves the final energy to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and Kcal mol^-1 molecule^-1. 
-
- - 0:
-"Speed dial" for all processes in sequence
  ```
 
 The energies of each refcode can then be inspected manually, and those considered implausible removed from 'cifs/validated' to avoid wasting effort.
