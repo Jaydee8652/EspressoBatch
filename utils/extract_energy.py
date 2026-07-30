@@ -36,7 +36,7 @@ if os.path.isfile(cifPath):
             if "_cell_formula_units_Z" in line:
                 cell_formula_units_Z = float(re.sub("[^0-9.]", "", line).strip())
             elif "_symmetry_space_group_name" in line:
-                symmetry_space_group_name = str(line.split()[1])
+                symmetry_space_group_name = str(' '.join(line.split()[1:])).strip("'")
 else:
     printToLog("# WARN - Compound ["+refcode+"] does not have a .cif file")
     quit()
@@ -97,9 +97,16 @@ with open(summaryPath, "a") as summary:
             print("\n# -scf output-\n", file=summary)
             
             lines = file.readlines()
-            for number, line in enumerate(lines, 1):                  
+            reduction_factor = 1
+            for number, line in enumerate(lines, 1):
+                if "crystal axes: (cart. coord. in units of alat)" in line:
+                    temp = lines[number].split("(")[1].split(")")[0]
+                    temp = re.sub('\s{2,}', ' ', temp).strip().split(" ")
+                    
+                    reduction_factor = temp[0]
+                    printToLog("# INFO - Compound ["+refcode+"] Reduced by a factor of ["+str(1/float(reduction_factor))+"]")
                 if line.startswith("!"):
-                    SCF_final_energy_ry = line[line.find("=")+1:].lstrip().split()[0]
+                    SCF_final_energy_ry = float(line[line.find("=")+1:].lstrip().split()[0]) * (1 / float(reduction_factor))
                     SCF_final_energy_kj_mol1_molecule1 = 6.02214076e+23 * 2.1798741e-21 * (1 / int(cell_formula_units_Z)) * float(SCF_final_energy_ry)
 
                     print("CIF_cell_formula_units_Z = "+str(cell_formula_units_Z), file=summary)  
