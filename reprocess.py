@@ -42,6 +42,8 @@ else:
     post = os.path.join(os.path.join(homeDirectory,"utils"), "post_processing.py")
 
     printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
+    printToLog("# INFO - Following directoriess are available ["+str(directories)+"]")
+
     for refcode in directories:
         if not isQueued(log, refcode):
             printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")

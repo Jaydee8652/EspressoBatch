@@ -174,7 +174,6 @@ if dataAvailable and choices.__contains__(OPT_R_VAL) or choices.__contains__(OPT
 unaccountedElements = {}
 for refcode, filename in cifs.items():
     unaccounted = []
-
     with open(os.path.join(original_cifs, filename), "r") as cif:
         printToLog("# INFO - Compound [" + refcode + "] Processing .cif file")
         formula_dict = {}

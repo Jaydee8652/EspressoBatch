@@ -20,12 +20,13 @@ def createDirectory(path, text, exit):
     cd(log, path, text, exit)
 
 #Params - can be changed
-
-ecutwfc = 55.0
-ecutrho = 440.0
+ntasks_per_node = 16 #32
+ecutwfc = 30.0 #55.0
+ecutrho = 240.0 #440.0 
 conv_thr = "1.D-6"
 
-batchTarget = 100
+grouping = 1000
+batchCap = 16
 
 #Main
 log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
@@ -37,7 +38,7 @@ cifs_path = os.path.join(homeDirectory, "cifs")
 createDirectory(cifs_path, "# WARN - No directory found for .cifs to process.", False)
 
 validated = os.path.join(cifs_path, "validated")
-createDirectory(validated, "# WARN - No directory found for .cifs to process. Place .cif files in or replace the newly created directory at ["+validated+"]", True)
+createDirectory(validated, "# WARN - No directory found for .cifs to process. Place .cif files in or replace the newly created directory at", True)
 
 cifs = {os.path.splitext(file)[0].replace(".cif", ""): file for file in sorted(os.listdir(validated)) if file.endswith('.cif') and os.path.isfile(os.path.join(validated, file))}
 
@@ -64,7 +65,7 @@ else:
 
 #Make sure there is a directory for the generated input files
 input_path = os.path.join(homeDirectory, "Sanity_Input_Files")
-createDirectory(input_path, "# INFO - Directory for input directories created at ["+ input_path + "]", False)
+createDirectory(input_path, "# INFO - Directory for input directories created at ", False)
 
 # Create the SUB submission script
 post = os.path.join(os.path.join(homeDirectory,"utils"), "extract_energy.py")
@@ -79,7 +80,7 @@ with open(SANITY_SUB, "w") as file:
 #SBATCH --mail-user={param_email}
 #SBATCH --account={param_account}
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=32
+#SBATCH --ntasks-per-node={ntasks_per_node}
 #SBATCH --cpus-per-task=1
 #SBATCH --time=00-23:59
 #SBATCH --mem-per-cpu=60G
@@ -111,12 +112,26 @@ if not os.path.isfile(localSheet):
 
 existing_directories = [directory for directory in sorted(os.listdir(input_path)) if os.path.isdir(os.path.join(input_path, directory)) and not directory.startswith(".")]
 
-printToLog("# INFO - Following directories are available to run ["+str(list(existing_directories))+"]")
-printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2 3') to choose processes to perform.")
+df = pd.read_csv(localSheet)  
+directories = [directory for directory in sorted(os.listdir(input_path)) if os.path.isdir(os.path.join(input_path, directory)) and directory in df['[REFCODE]'].values]
+
+df.set_index('[REFCODE]', inplace = True)
+df = df.astype(object)
+unrun = [directory for directory in directories if not str(df.at[directory, "[BATCH_started]"]) == "True" ]    
+
+printToLog("# INFO - Following directories are available to run ["+str(list(unrun))+"]")
+if len(unrun) >= grouping:
+    grouping = math.ceil((len(unrun) % 100) / round(len(unrun) / grouping)) + grouping
+printToLog(f"# INFO - [{len(unrun)}] checks to run. Reasonable batch grouping determined to be [{round(len(unrun) / grouping)}] job(s) each containing [{grouping}] calculations")
+
+if round(len(unrun) / grouping) > batchCap:
+      printToLog(f"# WARN - Determined number of job(s) [{round(len(unrun) / grouping)}] is greater than batch cap [{batchCap}]")      
+
+
+printToLog("# INFO - Enter integer to choose process to perform.")
 options = {
-    "1": "Run cif2cell to produce .in files",
-    "2": "Batch ["+str(batchTarget)+"] new sanity check calculations to slurm",
-    "0": "All in sequence",
+    "1": f"CALC NODE | Run cif2cell to produce .in files",
+    "2": f"HEAD NODE | Batch [{len(unrun)}] ([{round(len(unrun) / grouping)}] jobs each containing [{grouping}]) sanity check calculations to slurm",
 }
 
 for key, value in options.items():
@@ -124,19 +139,19 @@ for key, value in options.items():
 choices = input(">")
 invalidInputs = []
 regex = re.compile('[^0-9 ]')
-choices = regex.sub('', choices).strip().split(" ")
-if choices.__contains__("0"):
-    choices = list(options)
-    choices.remove("0")
-    
-choices = list(set(choices))
-for choice in choices:    
+choices = list(set(regex.sub('', choices).strip().split(" ")))
+if len(choices) > 1:
+    printToLog("# WARN - Only one process can be run at a time")
+    quit()
+
+choices = choices[0]
+for choice in choices: 
     if not options.__contains__(choice):
         invalidInputs.append(choice)
 if len(invalidInputs) > 0:
-    printToLog("# WARN - The following inputs ["+str(list(set(invalidInputs)))+"] are not supported")
+    printToLog("# WARN - The following input ["+str(list(set(invalidInputs)))+"] is not supported")
     quit()
-printToLog("# INFO - The following processes have been selected ["+str(sorted(choices,key=int))+"]")
+printToLog("# INFO - The following process has been selected ["+str(sorted(choices,key=int))+"]")
 
 if choices.__contains__("1"):
     for refcode, filename in cifs.items():
@@ -145,6 +160,10 @@ if choices.__contains__("1"):
         printToLog("# INFO - Compound [" + refcode + "] Processing .cif file")
         if existing_directories.__contains__(refcode):
             printToLog("# INFO - Compound ["+refcode+"] Previously processed")
+            if not (refcode in df['[REFCODE]'].values):
+                df = pd.concat([df, pd.DataFrame({"[REFCODE]": [refcode], "[BATCH_started]": " "})], ignore_index=True)
+                df.to_csv(localSheet, index=False)
+                print("# WARN - Compound ["+refcode+"] Not in sheet. Appending")
             continue
     
         # Create the directory if it doesn't already exist
@@ -242,39 +261,35 @@ if choices.__contains__("1"):
         df.to_csv(localSheet, index=False)
 
 if choices.__contains__("2"):
-    df = pd.read_csv(localSheet)  
+    batchCount = 0
+    while len(unrun) > 0 and batchCount <= batchCap:
+        unrun = unrun[:min(len(unrun), grouping)]
+        printToLog(f"# INFO - Attempting to batch group of [{grouping}] [{unrun[0]}->{unrun[-1]}]")
+        caselist = ' '.join(unrun)
     
-    directories = [directory for directory in sorted(os.listdir(input_path)) if os.path.isdir(os.path.join(input_path, directory)) and directory in df['[REFCODE]'].values]
+        if os.path.exists(SANITY_SUB):
+            try:
+                subprocess.call(f"module load {param_modules}; cd {input_path}; caselist=\"{caselist}\" sbatch SANITY_SUB",shell=True)
+                now = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                batchCount += 1
 
-    df.set_index('[REFCODE]', inplace = True)
-    df = df.astype(object)
-
-    unrun = [directory for directory in directories if not str(df.at[directory, "[BATCH_started]"]) == "True" ]    
-    unrun = unrun[:min(len(unrun), batchTarget)]
-    printToLog(f"# INFO - Attempting to batch [{unrun[0]}->{unrun[-1]}]")
-    caselist = ' '.join(unrun)
-
-    if os.path.exists(SANITY_SUB):
-        try:
-            subprocess.call(f"module load {param_modules}; cd {input_path}; caselist=\"{caselist}\" sbatch SANITY_SUB",shell=True)
-            now = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-            for refcode in unrun: 
-                refcodeDirectory = os.path.join(input_path, refcode)
-                batch_path = os.path.join(refcodeDirectory, refcode+"_batch.txt")
-
-                with open(batch_path, "a") as batch:
-                    writeCSV(df, refcode, "[BATCH_started]", True)
-                    writeCSV(df, refcode, "[BATCH_start_time]", now)
-                    writeCSV(df, refcode, "[BATCH_location]", getLocation())
-                    
-                    print("\n# -Batch data\n", file=batch)
-                    print("BATCH_started = "+str(True), file=batch)
-                    print("BATCH_start_time = "+str(now), file=batch)
-                    print("BATCH_location = "+str(getLocation()), file=batch)
-            df.to_csv(localSheet)
-        except subprocess.CalledProcessError as e:
-            printToLog("# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
-            printToLog(str(e))
-    else:
-         printToLog("# WARN - SANITY_SUB not present")
+                for refcode in unrun: 
+                    refcodeDirectory = os.path.join(input_path, refcode)
+                    batch_path = os.path.join(refcodeDirectory, refcode+"_batch.txt")
+    
+                    with open(batch_path, "a") as batch:
+                        writeCSV(df, refcode, "[BATCH_started]", True)
+                        writeCSV(df, refcode, "[BATCH_start_time]", now)
+                        writeCSV(df, refcode, "[BATCH_location]", getLocation())
+                        
+                        print("\n# -Batch data\n", file=batch)
+                        print("BATCH_started = "+str(True), file=batch)
+                        print("BATCH_start_time = "+str(now), file=batch)
+                        print("BATCH_location = "+str(getLocation()), file=batch)
+                df.to_csv(localSheet)
+            except subprocess.CalledProcessError as e:
+                printToLog("# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
+                printToLog(str(e))
+        else:
+             printToLog("# WARN - SANITY_SUB not present")
+        unrun = [directory for directory in directories if not str(df.at[directory, "[BATCH_started]"]) == "True" ]
