@@ -8,23 +8,15 @@ import io
 import csv
 import datetime
 import time          
-from generic_utils import writeCSV
+from generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, writeCSV
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
-    logs = os.path.join(homeDirectory, "logs")
-    if not os.path.exists(logs):
-        os.makedirs(logs)
-    info = str(info)
-
-    time = ""
-    if not info.startswith(" ---"):
-        time = str(datetime.datetime.now().strftime("[%H:%M:%S] "))
-    print(time+str(info))
-    with open(log, "a") as l:
-        l.write(time+str(info) + "\n")        
-    with open(os.path.join(logs, log), "a") as l:
-        l.write(time+str(info) + "\n")
+    pl(log, info)    
+def createDirectory(path, text, exit):
+    cd(log, path, text, exit)
+def removeDirectory(path, text, exit):
+    rd(log, path, text)
 
 #Main
 log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
@@ -43,9 +35,31 @@ if os.path.isfile(cifPath):
         for line in cif: 
             if "_cell_formula_units_Z" in line:
                 cell_formula_units_Z = float(re.sub("[^0-9.]", "", line).strip())
+            elif "_symmetry_space_group_name" in line:
+                symmetry_space_group_name = str(line.split()[1])
 else:
     printToLog("# WARN - Compound ["+refcode+"] does not have a .cif file")
     quit()
+
+# Remove .save directory
+saveDirectory = os.path.join(refcodeDirectory, refcode+".save")
+if os.path.exists(saveDirectory):
+    printToLog("# INFO - Compound ["+ refcode +"] Removing .save file ["+ saveDirectory + "]")
+    shutil.rmtree(saveDirectory)
+
+# Remove .wfc files
+printToLog("# INFO - Compound ["+ refcode +"] Removing .wfc files")
+regex = re.compile('[^a-zA-Z.]')
+wfcFiles = [file for file in os.listdir(refcodeDirectory) if regex.sub('', file).endswith('.wfc') and os.path.isfile(os.path.join(refcodeDirectory, file))]
+for wfc in wfcFiles:
+    os.remove(os.path.join(refcodeDirectory, wfc))
+
+# Remove .mix files
+printToLog("# INFO - Compound ["+ refcode +"] Removing .mix files")
+regex = re.compile('[^a-zA-Z.]')
+mixFiles = [file for file in os.listdir(refcodeDirectory) if regex.sub('', file).endswith('.mix') and os.path.isfile(os.path.join(refcodeDirectory, file))]
+for mix in mixFiles:
+    os.remove(os.path.join(refcodeDirectory, mix))
 
 # Clean existing summary
 summaryPath = os.path.join(refcodeDirectory, refcode+"_summary.txt")
@@ -86,10 +100,12 @@ with open(summaryPath, "a") as summary:
             for number, line in enumerate(lines, 1):                  
                 if line.startswith("!"):
                     SCF_final_energy_ry = line[line.find("=")+1:].lstrip().split()[0]
-                    SCF_final_energy_kcal_mol1_molecule1 = 5.2065398394955 * (10 ** -22) * 6.02214076 * (10 ** +23) * (1 / int(cell_formula_units_Z)) * float(SCF_final_energy_ry)
+                    SCF_final_energy_kj_mol1_molecule1 = 6.02214076e+23 * 2.1798741e-21 * (1 / int(cell_formula_units_Z)) * float(SCF_final_energy_ry)
 
+                    print("CIF_cell_formula_units_Z = "+str(cell_formula_units_Z), file=summary)  
+                    print("CIF_symmetry_space_group_name = "+str(symmetry_space_group_name), file=summary)  
                     print("SCF_final_energy_ry = "+str(SCF_final_energy_ry), file=summary)  
-                    print("SCF_final_energy_kcal_mol1_molecule1 = "+str(SCF_final_energy_kcal_mol1_molecule1), file=summary)  
+                    print("SCF_final_energy_kj_mol1_molecule1 = "+str(SCF_final_energy_kj_mol1_molecule1), file=summary)  
     else:
         print("# WARN - No .out file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No PWSCF .out file found")

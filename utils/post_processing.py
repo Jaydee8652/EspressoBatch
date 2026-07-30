@@ -18,40 +18,18 @@ import io
 import csv
 import datetime
 import time          
-from generic_utils import isQueued
+from generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, isQueued
 
 #Params - can be modified
 tolerance = 0.01
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
-    logs = os.path.join(homeDirectory, "logs")
-    if not os.path.exists(logs):
-        os.makedirs(logs)
-    info = str(info)
-
-    time = ""
-    if not info.startswith(" ---"):
-        time = str(datetime.datetime.now().strftime("[%H:%M:%S] "))
-    print(time+str(info))
-    with open(log, "a") as l:
-        l.write(time+str(info) + "\n")        
-    with open(os.path.join(logs, log), "a") as l:
-        l.write(time+str(info) + "\n")
-
-#Create directory if it doesn't exist. Optionally crash deliberately if doesn't exist
+    pl(log, info)    
 def createDirectory(path, text, exit):
-    if not os.path.exists(path):
-        printToLog(text + " ["+ path + "]")
-        os.makedirs(path)
-        if exit:
-            quit()
-
-#Remove directory is it exists
+    cd(log, path, text, exit)
 def removeDirectory(path, text):
-    if os.path.exists(path):
-        printToLog(text + " ["+ path + "]")
-        shutil.rmtree(path)
+    rd(log, path, text)
 
 CIF_symmetryElements = []
 
@@ -88,6 +66,9 @@ GIPAW_done = False
 log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
 refcodeDirectory = os.getcwd()#Directory where we are
 homeDirectory = os.path.split(os.path.split(refcodeDirectory)[0])[0]
+logs = os.path.join(refcodeDirectory, "logs")
+if not os.path.exists(logs):
+    os.makedirs(logs)
 
 refcode = os.path.basename(refcodeDirectory)
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Compound ["+refcode+"] Starting "+str(os.path.basename(sys.argv[0]).split(".")[0])+" in ["+str(refcodeDirectory)+"]")
@@ -116,6 +97,7 @@ if os.path.exists(saveDirectory):
     shutil.rmtree(saveDirectory)
 
 # Remove .wfc files
+printToLog("# INFO - Compound ["+ refcode +"] Removing .wfc files")
 regex = re.compile('[^a-zA-Z.]')
 wfcFiles = [file for file in os.listdir(refcodeDirectory) if regex.sub('', file).endswith('.wfc') and os.path.isfile(os.path.join(refcodeDirectory, file))]
 for wfc in wfcFiles:
@@ -138,7 +120,7 @@ with open(summaryPath, "a") as summary:
 
         with open(batch) as file:
             read = file.read()
-        with open(batch, "a") as file:
+        with open(batch, "a") as file:            
             if not read.__contains__("BATCH_done") and isQueued(log, refcode):
                 print("BATCH_end_time = "+str(now), file=file)       
                 print("BATCH_done = "+str(True), file=file)            
@@ -150,6 +132,29 @@ with open(summaryPath, "a") as summary:
         print("# WARN - No batch file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No batch file found")
 
+    # Get QE_SUB
+    QE_SUB = os.path.join(refcodeDirectory,"QE_SUB")
+    if os.path.isfile(QE_SUB):
+        with open(QE_SUB) as file:
+            lines = file.read().splitlines()
+            for line in lines:
+                value = line[line.find("=")+1:].strip()
+
+                if "#SBATCH --nodes" in line:
+                    print(f"BATCH_nodes = {value}", file=summary)
+
+                elif "#SBATCH --ntasks-per-node" in line:
+                    print(f"BATCH_ntasks_per_node = {value}", file=summary)
+
+                elif "#SBATCH --cpus-per-task" in line:
+                    print(f"BATCH_cpus_per_task = {value}", file=summary)
+
+                elif "#SBATCH --mem" in line:
+                    print(f"BATCH_memory = {value}", file=summary)
+
+                elif "#SBATCH --time" in line:
+                    print(f"BATCH_alloted_time = {value}", file=summary)
+    
     # Get .in
     pwscfIn = os.path.join(refcodeDirectory, refcode+".in")
     if os.path.isfile(pwscfIn):
@@ -276,8 +281,9 @@ with open(summaryPath, "a") as summary:
         if PWSCF_done == False:
             print("PWSCF_done = "+str(PWSCF_done), file=summary) 
             print("# WARN - PWSCF did not run to completion", file=summary) 
-
             printToLog("# WARN - Compound ["+refcode+"] PWSCF did not run to completion")
+            quit()
+
         if PWSCF_scfCycles == "":
             printToLog("# WARN - Compound ["+refcode+"] Convergence not reached in PWSCF output")
         if PWSCF_finalEnergy == "":
@@ -285,6 +291,7 @@ with open(summaryPath, "a") as summary:
     else:
         print("# WARN - No .out file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No PWSCF .out file found")
+
 
     #gipaw.REFCODE.in
     gipawIn = os.path.join(refcodeDirectory, "gipaw."+refcode+".in")
@@ -300,6 +307,8 @@ with open(summaryPath, "a") as summary:
     else:
         print("# WARN - No gipaw .in file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No GIPAW .in file found")
+        quit()
+
         
     #gipaw.REFCODE.out
     gipawOut = os.path.join(refcodeDirectory, "gipaw."+refcode+".out")
@@ -360,6 +369,7 @@ with open(summaryPath, "a") as summary:
                 print("GIPAW_done = "+str(GIPAW_done), file=summary) 
                 print("# WARN - GIPAW did not run to completion", file=summary) 
                 printToLog("# WARN - Compound ["+refcode+"] GIPAW did not run to completion")
+                quit()
 
             print("\n# -Sigma values-\n", file=summary)            
             sub = lines[start:]

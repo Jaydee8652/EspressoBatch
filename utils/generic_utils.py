@@ -14,13 +14,13 @@ if not os.path.exists(logs):
 
 #Prints and logs in one, convention I personally like
 def printToLog(log, info):
-    info = str(info)
     time = ""
-    if not info.startswith(" ---"):
-        time = str(datetime.datetime.now().strftime("[%H:%M:%S] "))
-    print(time+str(info))
+    if not str(info).startswith(" ---"):
+        time = str(datetime.datetime.now().strftime("[%H:%M:%S]"))
+    
     with open(os.path.join(logs, log), "a") as log:
-        log.write(time+str(info) + "\n")
+        print(f"{time} {info}",file=log)
+        print(f"{time} {info}")
         
 #Create directory if it doesn't exist. Optionally crash deliberately if doesn't exist
 def createDirectory(log, path, text, exit):
