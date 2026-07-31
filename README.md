@@ -109,7 +109,7 @@ The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ 
 Should only be run after all calculations are complete. Determines the relative energy of all outputs in kJ mol⁻¹ molecule⁻¹.
 The lowest energy output is used to 'zero' all other energies. 
 
-The energy of each refcode can then be inspected manually, structures with reasonable energies for can be marked to be retained.
+The energy of each refcode can then be inspected manually, structures with reasonable energies can be marked to be retained.
 This is done by entering 'True' in the [validated] column for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
 
  - 4: 
