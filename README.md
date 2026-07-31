@@ -81,6 +81,8 @@ Discard structures with unreported cocrystals/solvent
 
 Once the sort is complete .cif files are moved to directories within the 'cifs' directory corresponding to the reason for discard, 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again. Previously sorted .cif files will not be overriden, allowing for a new directory of .cif files to be added to the existing filtered dataset.
 
+
+
 ### sanity_check.py
 ```
 $ python3 sanity_check.py
@@ -117,12 +119,16 @@ Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sh
 saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that the test can be run again with different parameters if desired.
  ```
 
+
+
 ### qe_cif2cell.py
 ```
 $ python3 qe_cif2cell.py
 ```
 Will generate quantum-espresso input files from .cifs in 'cifs/validated', automatically run a test calculation, and create a batch file according to the projected resource use.
 Takes a list user input of atom types to optimise, all other atom types will be frozen.
+
+
 
 ### batch_control.py
 ```
