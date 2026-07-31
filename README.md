@@ -24,7 +24,7 @@ $ cd ..
 
 On the first run of some scripts they will attempt to determine the name of the local cluster, saving it to 'utils/location.txt'. This string can be changed manually if necessary. 
 
-## You can now run calculations!
+### You can now run calculations!
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
 To activate this feature, enter 'utils/params.py' 
@@ -42,7 +42,7 @@ In the repository:
 
 # Usage instructions:
 
-### cif_sort.py
+## cif_sort.py
 ```
 $ python3 cif_sort.py
 ```
@@ -83,7 +83,7 @@ Once the sort is complete .cif files are moved to directories within the 'cifs' 
 
 
 
-### sanity_check.py
+## sanity_check.py
 ```
 $ python3 sanity_check.py
 ```
@@ -121,7 +121,7 @@ saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that 
 
 
 
-### qe_cif2cell.py
+## qe_cif2cell.py
 ```
 $ python3 qe_cif2cell.py
 ```
@@ -130,7 +130,7 @@ Takes a list user input of atom types to optimise, all other atom types will be 
 
 
 
-### batch_control.py
+## batch_control.py
 ```
 $ python3 batch_control.py
 ```
