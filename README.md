@@ -24,7 +24,7 @@ $ cd ..
 
 On the first run of some scripts they will attempt to determine the name of the local cluster, saving it to 'utils/location.txt'. This string can be changed manually if necessary. 
 
-# You can now run calculations!
+## You can now run calculations!
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
 To activate this feature, enter 'utils/params.py' 
