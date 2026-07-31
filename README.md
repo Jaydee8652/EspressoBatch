@@ -95,7 +95,7 @@ Creates the 'Sanity_Input_Files' directory and presents the user with 4 processe
 Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to perform a "sanity check".
 
  - 2: (MUST BE RUN ON HEAD NODE)
-Batches all sanity check calculations to slurm. Calculations are grouped jobs dynamically, with an initial target of 1000 calculations per job submitted.
+Batches all sanity check calculations to slurm. Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted.
 These calculations will run sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split
 the task across more slurm jobs.
 
