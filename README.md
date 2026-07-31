@@ -124,6 +124,7 @@ $ python3 qe_cif2cell.py
 Will generate quantum-espresso input files from .cifs in 'cifs/validated', automatically run a test calculation, and create a batch file according to the projected resource use.
 Takes a list user input of atom types to optimise, all other atom types will be frozen.
 
+### batch_control.py
 ```
 $ python3 batch_control.py
 ```
