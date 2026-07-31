@@ -79,7 +79,7 @@ Discard structures with unreported cocrystals/solvent
 "Speed dial" for all filters in sequence
  ```
 
-Once the sort is complete .cif files are moved to directories within the 'cifs' directory corresponding to the reason for discard. The 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again. Previously sorted .cifs will not be overriden, allowing for a new directory of .cif files to be added to the existing filtered dataset.
+Once the sort is complete .cif files are moved to directories within the 'cifs' directory corresponding to the reason for discard, 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again. Previously sorted .cif files will not be overriden, allowing for a new directory of .cif files to be added to the existing filtered dataset.
 
 ### sanity_check.py
 ```
