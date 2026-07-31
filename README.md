@@ -42,6 +42,7 @@ In the repository:
 
 # Usage instructions:
 
+### cif_sort.py
 ```
 $ python3 cif_sort.py
 ```
@@ -78,26 +79,42 @@ Discard structures with unreported cocrystals/solvent
 
 Once the sort is complete .cifs are moved to directories within the 'cifs' directory corresponding to their reason for discard. The 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again, previously sorted .cifs will not be overriden.
 
-
+### sanity_check.py
 ```
 $ python3 sanity_check.py
 ```
-Intended for use in crystal structure prediction. Not necessary for .cifs obtained from the Cambridge Structural Database. Creates the 'Sanity_Input_Files' directory and presents the user with 2 processes to run.
+This script is intended for use in crystal structure prediction, allowing the energy of generated .cif files to be quickly assessed and unreasonable structures discarded. Streamlines the process of perfomeing "sanity check" calculations (scf calculations with a single K point to estimate energy).
+
+Not considered necessary for .cifs obtained from the Cambridge Structural Database, all CSD structures will likely have reasonable energies. 
+
+Creates the 'Sanity_Input_Files' directory and presents the user with 4 processes to run. Any of these processes can be run with an integer input, but they should be performed in order.
 ```
  - 1:
-Will generate quantum-espresso input files from .cifs in 'cifs/validated' to perform a "sanity check".
-(scf calculation with a single K point to estimate energy, each sanity check takes between 20 seconds - 3 minutes)
+Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to perform a "sanity check".
 
  - 2: 
-Batches all sanity check calculations to slurm. These calculations are grouped jobs dynamically.
-Logs which checks have already been batched and will not repeat work.
+Batches all sanity check calculations to slurm. Calculations are grouped jobs dynamically, with an initial target of 1000 calculations per job submitted.
+These calculations will run sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split
+the task across more slurm jobs.
+
+All calculations will be batched at once, regardless of group size as long as the number of jobs requested does not exceed 16.
+Automatcially logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
 
 Summary files are produced at the end of each calculation by 'extract_energy.py'
-Saves the final energy to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
+The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
+
+ - 3: 
+Calculates the relative energies for all outputs in kJ mol⁻¹ molecule⁻¹. The lowest energy output is used to 'zero' all other energies. 
+
+The energies of each refcode can then be inspected manually, structures with reasonable energies for  molecule can be marked to be retained.
+This is done by entering [validated] = 'True' for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
+
+ - 4: 
+Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'. Discarded molecules are
+saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that the test can be run again with different parameters if desired.
  ```
 
-The energies of each refcode can then be inspected manually, and those considered implausible removed from 'cifs/validated' to avoid wasting effort.
-
+### qe_cif2cell.py
 ```
 $ python3 qe_cif2cell.py
 ```
