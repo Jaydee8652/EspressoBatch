@@ -46,9 +46,11 @@ In the repository:
 ```
 $ python3 cif_sort.py
 ```
-On first run will create the 'original_cifs' directory, place .cif files in 'original_cifs' and rerun. The user will be presented with different filtering settings, some will be disabled without a 'structure_data.csv'. Any combination of these filters can be run through an integer input. 
+Intended to quickly filter a directory of .cif files by several characteristics listed below. 
 
-If the .cifs are from the Cambridge Structural Database, the 'structure_data.csv' can be obtained from the CSD. This can be done by saving a selection of structures as a TAB separated values table and converting with excel or other .csv manager. Without a provided 'structure_data.csv' the filtering settings that require it will be forcibly disabled if selected.
+If the provided .cif files are from the Cambridge Structural Database, a .csv of additional characteristics can be obtained by saving a selection of structures as a TAB separated values table in Conquest. This can then be converted with excel or another .csv manager. This file can be provided at 'EspressoBatch/structure_data.csv' to allow for more robust filtering. Without a provided 'structure_data.csv', filtering settings that require it will be forcibly disabled if selected. 
+
+On the first run this script will create the 'original_cifs' directory. Place .cif files in 'original_cifs' and rerun, the user will then be presented with different filtering settings. Any combination of these filters can be run through an integer input. 
 ```
  - 1:
 Discard structures with r factor greater than [{rCap} (default: 10)]
@@ -77,22 +79,22 @@ Discard structures with unreported cocrystals/solvent
 "Speed dial" for all filters in sequence
  ```
 
-Once the sort is complete .cifs are moved to directories within the 'cifs' directory corresponding to their reason for discard. The 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again, previously sorted .cifs will not be overriden.
+Once the sort is complete .cif files are moved to directories within the 'cifs' directory corresponding to the reason for discard. The 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again. Previously sorted .cifs will not be overriden, allowing for a new directory of .cif files to be added to the existing filtered dataset.
 
 ### sanity_check.py
 ```
 $ python3 sanity_check.py
 ```
-This script is intended for use in crystal structure prediction, allowing the energy of generated .cif files to be quickly assessed and unreasonable structures discarded. Streamlines the process of perfomeing "sanity check" calculations (scf calculations with a single K point to estimate energy).
+This script is intended for use in crystal structure prediction, allowing the energy of generated .cif files to be quickly assessed and unreasonable structures discarded. Streamlines the process of performing "sanity check" calculations (scf calculations with a single K point to estimate energy).
 
 Not considered necessary for .cifs obtained from the Cambridge Structural Database, all CSD structures will likely have reasonable energies. 
 
-Creates the 'Sanity_Input_Files' directory and presents the user with 4 processes to run. Any of these processes can be run with an integer input, but they should be performed in order.
+Creates the 'Sanity_Input_Files' directory and presents the user with 4 processes to run. Any of these processes can be run with an integer input, but they should ideally be performed in order.
 ```
  - 1:
 Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to perform a "sanity check".
 
- - 2: 
+ - 2: (MUST BE RUN ON HEAD NODE)
 Batches all sanity check calculations to slurm. Calculations are grouped jobs dynamically, with an initial target of 1000 calculations per job submitted.
 These calculations will run sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split
 the task across more slurm jobs.
@@ -104,13 +106,14 @@ Summary files are produced at the end of each calculation by 'extract_energy.py'
 The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
 
  - 3: 
-Calculates the relative energies for all outputs in kJ mol⁻¹ molecule⁻¹. The lowest energy output is used to 'zero' all other energies. 
+Should only be run after all calculations are complete. Determines the relative energy of all outputs in kJ mol⁻¹ molecule⁻¹.
+The lowest energy output is used to 'zero' all other energies. 
 
-The energies of each refcode can then be inspected manually, structures with reasonable energies for  molecule can be marked to be retained.
-This is done by entering [validated] = 'True' for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
+The energy of each refcode can then be inspected manually, structures with reasonable energies for can be marked to be retained.
+This is done by entering 'True' in the [validated] column for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
 
  - 4: 
-Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'. Discarded molecules are
+Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'. Discarded structures are
 saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that the test can be run again with different parameters if desired.
  ```
 
@@ -118,7 +121,8 @@ saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that 
 ```
 $ python3 qe_cif2cell.py
 ```
-Will generate quantum-espresso input files from .cifs in 'cifs/validated', automatically run a test calculation, and then update the slurm request according to the projected resource use.
+Will generate quantum-espresso input files from .cifs in 'cifs/validated', automatically run a test calculation, and create a batch file according to the projected resource use.
+Takes a list user input of atom types to optimise, all other atom types will be frozen.
 
 ```
 $ python3 batch_control.py
