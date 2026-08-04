@@ -5,8 +5,8 @@ Run the following commands:
 ```
 $ git clone https://github.com/Jaydee8652/EspressoBatch.git
 $ cd EspressoBatch/
-$ pip install -r requirements.txt
 $ module load scipy-stack/2023b
+$ pip install -r requirements.txt
 $ cd utils
 ```
 
