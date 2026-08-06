@@ -80,7 +80,11 @@ createDirectory(inputPath, "# INFO - Directory for input directories created at 
 existing_directories = [directory for directory in os.listdir(inputPath) if os.path.isdir(os.path.join(inputPath, directory)) and not directory.startswith(".")]
 
 printToLog("# INFO - Enter atom types to optimise, with spaces between entries ('H O C'). Enter 'All' to optimise all atoms")
-atomsToOptimise = input(">")
+if len(sys.argv) > 1:
+    atomsToOptimise = ' '.join(sys.argv[1:])
+else:
+    atomsToOptimise = input(">")
+    
 invalidInputs = []
 
 # Input sanitisation - user input of atoms to freeze
@@ -272,7 +276,7 @@ for refcode, filename in cifs.items():
                 content = f"""
 #!/bin/bash
         
-#SBATCH --job-name=[SUB]_{refcode}
+#SBATCH --job-name={refcode}_SUB
 #SBATCH --mail-type={param_slurmVerbosity}
 #SBATCH --mail-user={param_email}
 #SBATCH --account={param_account}

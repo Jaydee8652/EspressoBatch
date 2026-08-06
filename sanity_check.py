@@ -141,7 +141,11 @@ options = {
 
 for key, value in options.items():
     printToLog(f"# INFO -    [{key}] {value}")
-choices = input(">")
+if len(sys.argv) > 1:
+    choices = ' '.join(sys.argv[1:])
+else:
+    choices = input(">")
+
 invalidInputs = []
 regex = re.compile('[^0-9 ]')
 choices = list(set(regex.sub('', choices).strip().split(" ")))
