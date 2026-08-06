@@ -151,9 +151,9 @@ def appendCSV(log):
         printToLog(log, "# WARN - No local .csv found.")
         quit()
         
-    inputPath = os.path.join(homeDirectory, "Input_Files")
-    createDirectory(log, inputPath, "# WARN - No directory found for input files.", True)
-    directories = [directory for directory in os.listdir(inputPath) if os.path.isdir(os.path.join(inputPath, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(inputPath, directory), "INCOMPLETE.txt"))]
+    Input_Files = os.path.join(homeDirectory, "Input_Files")
+    createDirectory(log, Input_Files, "# WARN - No directory found for input files.", True)
+    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(Input_Files, directory), "INCOMPLETE.txt"))]
 
     directories = sorted(directories)
     printToLog(log,"# INFO - The following input directories are available ["+str(directories)+"]")
@@ -169,6 +169,65 @@ def appendCSV(log):
 
     df.to_csv(localSheet, index=False)
     printToLog(log,"# INFO - Successfully appended ["+str(processedCount)+"] compounds to sheet at ["+str(localSheet)+"]")
+
+
+def isolateFailuresInCSV(log):
+    failureCount = 0    
+    printToLog(log,"# INFO - Attempting to find failures in sheet at ["+str(localSheet)+"]")
+
+    if not os.path.isfile(localSheet):
+        printToLog(log, "# WARN - No local .csv found.")
+        quit()
+
+    failures = os.path.join(homeDirectory, "failures")
+    createDirectory(log, failures, "# WARN - No directory found for failed input files.", False)
+    previous = [directory for directory in os.listdir(failures) if os.path.isdir(os.path.join(failures, directory)) and not directory.startswith(".")]
+    
+    Input_Files = os.path.join(homeDirectory, "Input_Files")
+    createDirectory(log, Input_Files, "# WARN - No directory found for input files.", True)
+    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".")]
+
+    directories = sorted(directories)
+    printToLog(log,"# INFO - The following input directories are available ["+str(directories)+"]")
+    
+    df = pd.read_csv(localSheet)
+    df.set_index('[REFCODE]', inplace = True)
+    for refcode, row in df.iterrows():        
+        if previous.__contains__(refcode):
+            continue
+        if not str(row["[BATCH_started]"]) == "True":
+            continue
+        if not str(row["[BATCH_location]"]) == getLocation():
+            continue
+        
+        failed = False
+        refcodeDirectory = os.path.join(Input_Files, refcode)
+        
+        if directories.__contains__(refcode):            
+            if not str(row["[BATCH_done]"]) == "True":
+                if not isQueued(log, refcode):
+                    printToLog(log,"# INFO - Compound ["+ refcode +"] Did not finish")
+                    failed = True
+            else:
+                if not str(row["[PWSCF_done]"]) == "True":
+                    printToLog(log,"# INFO - Compound ["+ refcode +"] PWSCF Did not finish")
+                    failed = True
+
+                if not str(row["[GIPAW_done]"]) == "True":
+                    printToLog(log,"# INFO - Compound ["+ refcode +"] GIPAW Did not finish")
+                    failed = True
+
+                if str(row["[PWSCF_finalEnergy]"]) == "nan":
+                    printToLog(log,"# INFO - Compound ["+ refcode +"] Did not converge")
+                    failed = True
+        else:
+            printToLog(log,"# INFO - Compound ["+ refcode +"] Not present on this cluster")
+        if failed:
+            shutil.copytree(refcodeDirectory, os.path.join(failures, refcode))
+            failureCount += 1
+        
+    printToLog(log,"# INFO - Determined that ["+str(failureCount)+"] calculations have failed")
+
 
 
 
@@ -220,16 +279,16 @@ def batchCalculations(log, batchCount):
         quit()
     
     #Make sure there is a directory to process
-    inputPath = os.path.join(homeDirectory, "Input_Files")
-    createDirectory(log,inputPath, "# WARN - No directory found for input files.", True)
-    directories = [directory for directory in os.listdir(inputPath) if os.path.isdir(os.path.join(inputPath, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(inputPath, directory), "INCOMPLETE.txt"))]
+    Input_Files = os.path.join(homeDirectory, "Input_Files")
+    createDirectory(log,Input_Files, "# WARN - No directory found for input files.", True)
+    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(Input_Files, directory), "INCOMPLETE.txt"))]
 
     numberOfDirectories = len(directories) # determine number of directories
     if numberOfDirectories == 0:
-        printToLog(log,"# WARN - No directories found in ["+ inputPath + "]")
+        printToLog(log,"# WARN - No directories found in ["+ Input_Files + "]")
         quit()
     else:
-        printToLog(log,"# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
+        printToLog(log,"# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ Input_Files + "]")
         
     processedCount = 0
 
@@ -242,7 +301,7 @@ def batchCalculations(log, batchCount):
             printToLog(log,"# INFO - Processing compound with refcode ["+ refcode +"]")
             if not str(df.at[refcode, "[BATCH_started]"]) == "True":
                 printToLog(log,"# INFO - Compound with refcode ["+ refcode +"] not previously run, attempting to batch")
-                refcodeDirectory = os.path.join(inputPath, refcode)
+                refcodeDirectory = os.path.join(Input_Files, refcode)
                 
                 QE_SUB = os.path.join(refcodeDirectory, "QE_SUB")
                 batch_path = os.path.join(refcodeDirectory, refcode+"_batch.txt")
@@ -291,37 +350,7 @@ def initSheet(log):
     df = pd.concat([df, pd.DataFrame({"[REFCODE]": ["init"]})], ignore_index=True)    
 
     df["[BATCH_location]"] = ["Abyss"]    
-    df["[BATCH_done]"] = ["True"]
-    df["[PWSCF_done]"] = ["True"]
-    df["[GIPAW_done]"] = ["True"]
-
-    df["[BATCH_time]"] = ["2026-06-26 19:10:06"]
-    df["[PWSCF_time]"] = ["2026-06-26 19:10:06"]
-    df["[GIPAW_time]"] = ["2026-06-26 19:10:06"]
-
-    df["[CIF_symmetryEquivalents]"] = ["2"]
-    df["[CIF_symmetryFactor]"] = ["2"]
-    df["[CIF_inversionCentre]"] = ["True"]
-
-    df["[PWSCF_ecutwfc]"] = ["55.0"]
-    df["[PWSCF_ecutrho]"] = ["8"]
-    df["[PWSCF_conv_thr]"] = ["1.D-6"]
-    df["[PWSCF_version]"] = ["v.7.3.1"]
-    df["[PWSCF_numberMPI]"] = ["1"]
-    df["[PWSCF_numberThreads]"] = ["1"]
-    df["[PWSCF_RG]"] = ["1"]
-    df["[PWSCF_estimatedRAM]"] = ["1.1"]
-    df["[PWSCF_scfCycles]"] = ["1"]
-    df["[PWSCF_bfgsSteps]"] = ["1"]
-    df["[PWSCF_finalEnergy]"] = ["-1"]
-    
-    df["[GIPAW_q_gipaw]"] = ["0.01"]
-    df["[GIPAW_version]"] = ["v.7.3.1"]
-    df["[GIPAW_numberMPI]"] = ["1"]
-    df["[GIPAW_numberThreads]"] = ["1"]
-    df["[GIPAW_RG]"] = ["1"]
-    df["[GIPAW_mscPPM]"] = ["1.1"]
-    df["[GIPAW_msCorrection]"] = ["[['0.6667', '0.0000', '0.0000'], ['0.0000', '0.6667', '0.0000'], ['0.0000', '0.0000', '0.6667']]"]
+    df["[BATCH_started"] = ["True"]
     df.to_csv(localSheet, index=False)
 
 

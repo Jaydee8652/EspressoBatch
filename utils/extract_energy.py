@@ -100,19 +100,20 @@ with open(summaryPath, "a") as summary:
             reduction_factor = 1
             for number, line in enumerate(lines, 1):
                 if "crystal axes: (cart. coord. in units of alat)" in line:
-                    temp = lines[number].split("(")[1].split(")")[0]
+                    temp = lines[number].split("=")[1].split("(")[1].split(")")[0]
                     temp = re.sub('\s{2,}', ' ', temp).strip().split(" ")
                     
                     reduction_factor = temp[0]
                     printToLog("# INFO - Compound ["+refcode+"] Reduced by a factor of ["+str(1/float(reduction_factor))+"]")
                 if line.startswith("!"):
                     SCF_final_energy_ry = float(line[line.find("=")+1:].lstrip().split()[0]) * (1 / float(reduction_factor))
-                    SCF_final_energy_kj_mol1_molecule1 = 6.02214076e+23 * 2.1798741e-21 * (1 / int(cell_formula_units_Z)) * float(SCF_final_energy_ry)
+                    SCF_final_energy_kJ_mol1_molecule1 = 6.02214076e+23 * 2.1798741e-21 * (1 / int(cell_formula_units_Z)) * float(SCF_final_energy_ry)
 
                     print("CIF_cell_formula_units_Z = "+str(cell_formula_units_Z), file=summary)  
                     print("CIF_symmetry_space_group_name = "+str(symmetry_space_group_name), file=summary)  
+                    print("CIF_reduction_factor = "+str(1 / float(reduction_factor)))  
                     print("SCF_final_energy_ry = "+str(SCF_final_energy_ry), file=summary)  
-                    print("SCF_final_energy_kj_mol1_molecule1 = "+str(SCF_final_energy_kj_mol1_molecule1), file=summary)  
+                    print("SCF_final_energy_kJ_mol⁻¹_molecule⁻¹ = "+str(SCF_final_energy_kJ_mol1_molecule1), file=summary)  
     else:
         print("# WARN - No .out file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No PWSCF .out file found")
