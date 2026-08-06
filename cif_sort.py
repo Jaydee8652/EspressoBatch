@@ -3,9 +3,7 @@
 # Filters unwanted .cif files based on data from the CSD (provided as a .csv) and the completeness of the structural data
 # within the .cif and available .UPF files
 
-
 # All processes are reported to cif_sort.log for debugging
-
 
 #Imports
 import os

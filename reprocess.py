@@ -29,25 +29,25 @@ homeDirectory = os.getcwd()#Directory where we are
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
 
 #Make sure there is a directory to process
-inputPath = os.path.join(homeDirectory, "Input_Files")
-createDirectory(inputPath, "# WARN - No directory found for input files.", True)
-directories = [directory for directory in os.listdir(inputPath) if os.path.isdir(os.path.join(inputPath, directory)) and not directory.startswith(".") and os.path.isfile(os.path.join(os.path.join(inputPath, directory), directory+".out")) and os.path.isfile(os.path.join(os.path.join(inputPath, directory), "gipaw."+directory+".out"))]
+Input_Files = os.path.join(homeDirectory, "Input_Files")
+createDirectory(Input_Files, "# WARN - No directory found for input files.", True)
+directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".") and os.path.isfile(os.path.join(os.path.join(Input_Files, directory), directory+".out")) and os.path.isfile(os.path.join(os.path.join(Input_Files, directory), "gipaw."+directory+".out"))]
 
 directories = sorted(directories)
 numberOfDirectories = len(directories) # determine number of directories
 if numberOfDirectories == 0:
-    printToLog("# WARN - No directories found in ["+ inputPath + "]")
+    printToLog("# WARN - No directories found in ["+ Input_Files + "]")
     quit()
 else:
     post = os.path.join(os.path.join(homeDirectory,"utils"), "post_processing.py")
 
-    printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ inputPath + "]")
+    printToLog("# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ Input_Files + "]")
     printToLog("# INFO - Following directoriess are available ["+str(directories)+"]")
 
     for refcode in directories:
         if not isQueued(log, refcode):
             printToLog("# INFO - Processing compound with refcode ["+ refcode +"]")
-            refcodeDirectory = os.path.join(inputPath, refcode)
+            refcodeDirectory = os.path.join(Input_Files, refcode)
             batchCommand = f"module load {param_modules}; cd {refcodeDirectory}; python3 {post}"
             try:
                 printToLog("# INFO - Compound ["+refcode+"] Rerunning post-processing")

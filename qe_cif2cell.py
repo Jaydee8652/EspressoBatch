@@ -272,7 +272,7 @@ for refcode, filename in cifs.items():
                 content = f"""
 #!/bin/bash
         
-#SBATCH --job-name={refcode}_SUB
+#SBATCH --job-name=[SUB]_{refcode}
 #SBATCH --mail-type={param_slurmVerbosity}
 #SBATCH --mail-user={param_email}
 #SBATCH --account={param_account}

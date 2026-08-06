@@ -30,7 +30,7 @@ import datetime
 import time       
 import sys
 from utils.generic_utils import printToLog as pl, createDirectory as cd, getQueueLength
-from utils.git_utils import downloadCSV, uploadCSV, appendCSV, updateCSV, batchCalculations, verify
+from utils.git_utils import downloadCSV, uploadCSV, appendCSV, updateCSV, batchCalculations, isolateFailuresInCSV, verify
 
 #Params - can be modified
 batchTarget = 16
@@ -51,8 +51,8 @@ batchCount = batchTarget - current
 
 printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2 3') to choose processes to perform.")
 options = {
-    "1": "Append .csv with all local input directory refcodes",
-    "2": "Update .csv with output data from all local summary files",
+    "1": "Update .csv with output data from all local summary files",
+    "2": "Copy failed input directories to 'failures'",
     "3": "Batch ["+str(batchCount)+ "] (to total ["+str(batchTarget)+"] in queue) new calculations to slurm",
     "0": "All in sequence",
 }
@@ -77,10 +77,12 @@ printToLog("# INFO - The following processes have been selected ["+str(sorted(ch
 
 if verify(log):
     localPath = downloadCSV(log)
+    appendCSV(log)
+
     if choices.__contains__("1"):
-        appendCSV(log)
-    if choices.__contains__("2"):
         updateCSV(log)
+    if choices.__contains__("2"):
+        isolateFailuresInCSV(log)
     if choices.__contains__("3"):
         batchCalculations(log, batchCount)
         

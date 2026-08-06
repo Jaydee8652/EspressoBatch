@@ -21,6 +21,7 @@ def createDirectory(path, text, exit):
 
 #Params - can be changed
 ntasks_per_node = 16 #32
+mem_per_cpu = 60
 ecutwfc = 30.0 #55.0
 ecutrho = 240.0 #440.0 
 conv_thr = "1.D-6"
@@ -39,6 +40,8 @@ createDirectory(cifs_path, "# WARN - No directory found for .cifs to process.", 
 
 validated = os.path.join(cifs_path, "validated")
 createDirectory(validated, "# WARN - No directory found for .cifs to process. Place .cif files in or replace the newly created directory at", True)
+validated_count = len(os.listdir(validated))
+
 
 cifs = {os.path.splitext(file)[0].replace(".cif", ""): file for file in sorted(os.listdir(validated)) if file.endswith('.cif') and os.path.isfile(os.path.join(validated, file))}
 
@@ -83,7 +86,7 @@ with open(SANITY_SUB, "w") as file:
 #SBATCH --ntasks-per-node={ntasks_per_node}
 #SBATCH --cpus-per-task=1
 #SBATCH --time=00-23:59
-#SBATCH --mem-per-cpu=60G
+#SBATCH --mem-per-cpu={mem_per_cpu}G
 
 echo "Running sanity checks [$caselist]"
 
@@ -132,6 +135,8 @@ printToLog("# INFO - Enter integer to choose process to perform.")
 options = {
     "1": f"CALC NODE | Run cif2cell to produce .in files",
     "2": f"HEAD NODE | Batch [{len(unrun)}] ([{round(len(unrun) / grouping)}] jobs each containing [{grouping}]) sanity check calculations to slurm",
+    "3": f"Calculate relative energies for all outputs in kJ mol⁻¹ molecule⁻¹",
+    "4": f"Discard .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'",
 }
 
 for key, value in options.items():
@@ -293,3 +298,34 @@ if choices.__contains__("2"):
         else:
              printToLog("# WARN - SANITY_SUB not present")
         unrun = [directory for directory in directories if not str(df.at[directory, "[BATCH_started]"]) == "True" ]
+
+if choices.__contains__("3"):
+    minimmum_energy = float(df['[SCF_final_energy_kJ_mol⁻¹_molecule⁻¹]'].min())
+    printToLog(f"# INFO - Minimum energy determined to be [{minimmum_energy} kJmol⁻¹ molecule⁻¹] [{df['[SCF_final_energy_kJ_mol⁻¹_molecule⁻¹]'].idxmin()}]")
+
+    for refcode, row in df.iterrows():
+        relative_energy = minimmum_energy - float(row['[SCF_final_energy_kJ_mol⁻¹_molecule⁻¹]'])
+        printToLog(f"# INFO - Compound [{refcode}] Relative energy determined to be [{relative_energy} kJ mol⁻¹ molecule⁻¹]")
+        writeCSV(df, refcode, "[relative_energy_kJ_mol⁻¹_molecule⁻¹]", relative_energy)
+        df.to_csv(localSheet)
+    df["[validated]"] = ""
+    df.to_csv(localSheet)
+
+if choices.__contains__("4"):
+    high_energy = os.path.join(cifs_path, "high_energy")
+    createDirectory(high_energy, "# WARN - No directory found for high energy .cifs, created at", False)
+    high_energy_count = len(os.listdir(high_energy))
+
+    time = str(datetime.datetime.now().strftime("[%Y-%m-%d_%H-%M-%S]"))
+    validated_backup = os.path.join(cifs_path, f"validated_backup_{time}")
+    shutil.copytree(validated, validated_backup, dirs_exist_ok=True)
+
+    for refcode, row in df.iterrows():
+        if not str(row['[validated]']).lower().capitalize() == "True":
+            shutil.move(os.path.join(validated, f"{refcode}.cif"), os.path.join(high_energy, f"{refcode}.cif"))
+            printToLog(f"# INFO - Compound [{refcode}] Discarded, not flagged to be retained")
+
+    printToLog(f"# INFO - [{'{: >3}'.format(len(os.listdir(high_energy)) - high_energy_count)}] compounds discarded")
+    
+    surviving = len(os.listdir(validated))
+    printToLog(f"# INFO - Sort complete, [{surviving}] of [{validated_count}] compounds validated, with a % survival of [{round((surviving / len(cifs)) * 100, 3)} %]")
