@@ -197,8 +197,6 @@ def isolateFailuresInCSV(log):
             continue
         if not str(row["[BATCH_started]"]) == "True":
             continue
-        if not str(row["[BATCH_location]"]) == getLocation():
-            continue
         
         failed = False
         refcodeDirectory = os.path.join(Input_Files, refcode)

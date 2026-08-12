@@ -36,6 +36,55 @@ def removeDirectory(path, text):
     rd(log, path, text)
 
 
+def populate_mol(path, lines, seed=1):           
+    with open(path, "w") as file:                        
+        for number, line in enumerate(''.join(lines).split("\n@<TRIPOS>ATOM")[0].split("\n"), 0):
+            print(line.rstrip(), file=file)
+
+        if seed == 1:
+            append_atom(seed)
+        else:   
+            for atom_number, atom_line in enumerate(seed, 1):
+                if not new_atoms.__contains__(atom_line):
+                    append_atom(atom_number)
+                else:
+                    printToLog("# INFO - Compound ["+refcode+"] Atom already selected ["+str(atoms[atom_number].rstrip())+"]")
+
+        printToLog(f"# INFO - Compound [{refcode}] Populating single cell .mol2" if not seed == 1 else f"# INFO - Compound [{refcode}] Populating single molecule .mol2")
+        id_map = {}
+        
+        print("@<TRIPOS>ATOM", file=file)
+        for atom_number, new_atom in enumerate(new_atoms, 1):
+            new_id = str('{: >6}'.format(atom_number))
+            old_id = str(new_atom[1:7])
+
+            id_map[old_id] = new_id
+            temp = " " + str(new_id) + new_atom.rstrip()[7:]
+            print(temp, file=file)
+            
+        print("@<TRIPOS>BOND", file=file)
+        for bond_number, new_bond in enumerate(new_bonds, 1):
+            first_id = str(new_bond[6:12])                                        
+            second_id = str(new_bond[12:18])       
+            
+            new_id = str('{: >6}'.format(bond_number))
+            temp = new_id + id_map[first_id] + id_map[second_id] + new_bond[18:].rstrip()
+            print(temp, file=file)
+
+        printToLog("# INFO - Compound ["+ refcode +"] Contains ["+str(len(new_atoms))+"] atoms and ["+str(len(new_bonds))+"] bonds")
+        if (len(new_bonds) / len(new_atoms)) < 0.8:
+            printToLog("# WARN - Compound ["+ refcode +"] Has unusually low bond density")
+            
+    with open(path) as file:
+        lines = file.readlines()
+    with open(path, "w") as file:
+        for number, line in enumerate(lines, 1):
+            if number == 3: #MAYBE BETTER ANSWER FOR THIS?
+                temp = line.strip().lstrip().split()                                        
+                print(" "+str(len(new_atoms))+" "+str(len(new_bonds)) +" "+str(temp[2])+" "+str(temp[3])+" "+str(temp[4]), file=file)
+            else:
+                print(line.rstrip(), file=file)
+
 def append_atom(atom_number):
     atom_id = str('{: >6}'.format(atom_number))
     
@@ -133,8 +182,8 @@ super_mol2 = os.path.join(refcodeDirectory, refcode+"_super.mol2")
 summaryPath = os.path.join(refcodeDirectory, refcode+"_summary.txt")
 summaryCopyPath =os.path.join(Summary_Files, refcode+"_summary.txt")
 
-mol2 = os.path.join(refcodeDirectory, refcode+".mol2")
-mol2_copy = os.path.join(os.path.join(homeDirectory, "mol2"), refcode+".mol2")                    
+cell_mol2 = os.path.join(refcodeDirectory, refcode+"_cell.mol2")
+molecule_mol2 = os.path.join(refcodeDirectory, refcode+"_molecule.mol2")
 
 if os.path.exists(opt_cif):
     printToLog("# INFO - Compound ["+ refcode +"] Cleaning existing optimised _super.cif file ["+ opt_cif + "]")
@@ -142,12 +191,12 @@ if os.path.exists(opt_cif):
 if os.path.exists(super_mol2):
     printToLog("# INFO - Compound ["+ refcode +"] Cleaning existing _super.mol2 file ["+ super_mol2 + "]")
     os.remove(super_mol2)
-if os.path.exists(mol2):
-    printToLog("# INFO - Compound ["+ refcode +"] Cleaning existing .mol2 file ["+ mol2 + "]")
-    os.remove(mol2)
-if os.path.exists(mol2_copy):
-    printToLog("# INFO - Compound ["+ refcode +"] Cleaning existing .mol2 file copy ["+ mol2_copy + "]")
-    os.remove(mol2_copy)
+if os.path.exists(cell_mol2):
+    printToLog("# INFO - Compound ["+ refcode +"] Cleaning existing _cell.mol2 file ["+ cell_mol2 + "]")
+    os.remove(cell_mol2)
+if os.path.exists(molecule_mol2):
+    printToLog("# INFO - Compound ["+ refcode +"] Cleaning existing _molecule.mol2 file ["+ molecule_mol2 + "]")
+    os.remove(molecule_mol2)
 if os.path.exists(summaryPath):
     printToLog("# INFO - Compound ["+ refcode +"] Cleaning existing summary file ["+ summaryPath + "]")
     os.remove(summaryPath)
@@ -296,7 +345,7 @@ if os.path.isfile(cif):
                             count += 1
                             if count > single_cell_count:
                                 count = 1
-                            line += " #" + str(count)
+                            line += f" #[{count}]"
                         print(line, file=file)
 
 
@@ -335,73 +384,28 @@ if os.path.isfile(cif):
                                             bond_count += 1
     
                                             printToLog("# INFO - Compound ["+refcode+"] Adding bond ["+ str('{: >6}'.format(metal_number))+" "+ str(metal)+" - "+ str('{: >6}'.format(other_number))+" "+ str(other)+ " "+str(round(cutoff,3))+" "+ str(round(distance,3))+"]")
-                                            print(str('{: >6}'.format(bond_count)) + str('{: >6}'.format(metal_number)) + str('{: >6}'.format(other_number)) + "    1", file=file)
+                                            
+                                            bond = str('{: >6}'.format(bond_count)) + str('{: >6}'.format(metal_number)) + str('{: >6}'.format(other_number)) + "    1"
+                                            print(bond, file=file)
+                                            bonds.append(bond)
                                         else:
                                             printToLog("# INFO - Compound ["+refcode+"] Bond already present ["+ str('{: >6}'.format(metal_number))+" "+ str(metal)+" - "+ str('{: >6}'.format(other_number))+" "+ str(other)+ " "+str(round(cutoff,3))+" "+ str(round(distance,3))+"]")
 
                 printToLog("# INFO - Compound ["+refcode+"] Added ["+str(bond_count - len(bonds))+"] missing metallic bonds")
                 printToLog("# INFO - Compound ["+refcode+"] Exploring bonding networks")
 
-                with open(mol2, "w") as mol2_file:
+                with open(super_mol2) as file:
+                    lines = file.readlines()
+                    atoms = ''.join(lines).split('@<TRIPOS>ATOM\n')[1].split('\n@<TRIPOS>BOND')[0].split("\n")
+                    bonds = ''.join(lines).split('@<TRIPOS>BOND\n')[1].split("\n")
+    
                     new_atoms = []
                     new_bonds = []
+                    populate_mol(molecule_mol2, lines)
                     
-                    with open(super_mol2) as file:
-                        lines = file.readlines()
-
-                        atoms = ''.join(lines).split('@<TRIPOS>ATOM\n')[1].split('\n@<TRIPOS>BOND')[0].split("\n")
-                        bonds = ''.join(lines).split('@<TRIPOS>BOND\n')[1].split("\n")
-
-                        first_cell = ''.join(lines).split('@<TRIPOS>ATOM\n')[1].split("\n")[:single_cell_count]
-                        
-                        for number, line in enumerate(''.join(lines).split("\n@<TRIPOS>ATOM")[0].split("\n"), 0):
-                            print(line.rstrip(), file=mol2_file)
-
-                        #Single seed vs whole cell. Will probably be an option in future
-                        append_atom(1)
-                        #for atom_number, atom_line in enumerate(first_cell, 1):
-                        #    if not new_atoms.__contains__(atom_line):
-                        #        append_atom(atom_number)
-                        #    else:
-                        #        printToLog("# INFO - Compound ["+refcode+"] Atom already selected ["+str(atoms[atom_number].rstrip())+"]")
-                    
-                    printToLog("# INFO - Compound ["+refcode+"] Populating .mol2")
-                    id_map = {}
-                    
-                    print("@<TRIPOS>ATOM", file=mol2_file)
-                    for atom_number, new_atom in enumerate(new_atoms, 1):
-                        new_id = str('{: >6}'.format(atom_number))
-                        old_id = str(new_atom[1:7])
-
-                        id_map[old_id] = new_id
-                        temp = " " + str(new_id) + new_atom.rstrip()[7:]
-                        print(temp, file=mol2_file)
-                        
-                    print("@<TRIPOS>BOND", file=mol2_file)
-                    for bond_number, new_bond in enumerate(new_bonds, 1):
-                        first_id = str(new_bond[6:12])                                        
-                        second_id = str(new_bond[12:18])       
-                        
-                        new_id = str('{: >6}'.format(bond_number))
-                        temp = new_id + id_map[first_id] + id_map[second_id] + new_bond[18:].rstrip()
-                        print(temp, file=mol2_file)
-
-                    printToLog("# INFO - Compound ["+ refcode +"] Contains ["+str(len(new_atoms))+"] atoms and ["+str(len(new_bonds))+"] bonds")
-                    if (len(new_bonds) / len(new_atoms)) < 0.8:
-                        printToLog("# WARN - Compound ["+ refcode +"] Has unusually low bond density")
-                    
-                with open(mol2) as file:
-                    lines = file.readlines()
-                with open(mol2, "w") as file:
-                    for number, line in enumerate(lines, 1):
-                        if number == 3: #MAYBE BETTER ANSWER FOR THIS?
-                            temp = line.strip().lstrip().split()                                        
-                            print(" "+str(len(new_atoms))+" "+str(len(new_bonds)) +" "+str(temp[2])+" "+str(temp[3])+" "+str(temp[4]), file=file)
-                        else:
-                            print(line.rstrip(), file=file)
-                            
-                shutil.copyfile(mol2, mol2_copy)
-                printToLog("# INFO - Compound ["+ refcode +"] Copied .mol2 file ["+ mol2_copy + "]")
+                    new_atoms.clear()
+                    new_bonds.clear()
+                    populate_mol(cell_mol2, lines, ''.join(lines).split('@<TRIPOS>ATOM\n')[1].split("\n")[:single_cell_count])
             else:
                 printToLog("# WARN - Compound ["+refcode+"] .mol2 output not found")
         except subprocess.CalledProcessError as e:
@@ -520,7 +524,9 @@ with open(summaryPath, "a") as summary:
                         equivalent.append(round(float(eval(str(operation[2]))), 5) % 1)      
                         
                         equivalents.append(str(equivalent))
-                        
+
+                    printToLog(line)
+                    printToLog(set(equivalents))
                     unique = round(len(list(set(equivalents))) * float(reduction_factor))
                     symmetryEquivelents.append(unique)
                     curr += unique            
@@ -701,6 +707,11 @@ with open(summaryPath, "a") as summary:
 
             count = 0
             previous = -10
+            print("#BEGIN_ATOMIC_POSITIONS", file=summary)
+
+            #sub = list(filter(lambda line: "Total sigma" in line, sub))
+            #print(sub)
+            
             for number, line in enumerate(sub, 0):
                 if count < len(symmetryEquivelents):
                     if number == previous + (10 * (symmetryEquivelents[count])):
@@ -730,11 +741,19 @@ with open(summaryPath, "a") as summary:
                         matrix.append(re.sub('\s{2,}', ' ', sub[number+2]).strip().split(" "))
                         matrix.append(re.sub('\s{2,}', ' ', sub[number+3]).strip().split(" "))
 
-                        matrix = str(matrix)
-                        print(f"_{str(line.lstrip().strip())} - Averaged over {str(len(previous))} atoms: {str(round(currentSum / len(previous),2))} {matrix}", file=summary)
+
+                        line = re.sub('\s{2,}', ' ', line)
+                        line = re.sub("Atom", "", line).lstrip().strip()
+                        line = re.sub("pos: ", "", line)
+                        line = re.sub("Total sigma: ", "", line)
+
+                        coords = line.split("(")[1].split(")")[0]
+                        line = line.split()
                         
+                        print(f"#[{line[0]}] {line[1]} {line[-1]} ({str(round(currentSum / len(previous),2))}) SEP:{str(len(previous))} [XYZ{coords}] {matrix}",file=summary)
                         count += 1
                         previous = number
+            print("#END_ATOMIC_POSITIONS", file=summary)
     else:
         print("# WARN - No gipaw .out file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No GIPAW .out file found")
