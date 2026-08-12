@@ -261,10 +261,10 @@ for refcode, filename in cifs.items():
                 printToLog("# WARN - Compound [" + refcode + "] Number of tasks per node ["+str(kPoints)+"] above cap of ["+str(nNodesMax)+"]")   
                 kPoints = nNodesMax
     
-            days = "00"
-            if volume > 5000:
-                printToLog("# INFO - Compound [" + refcode + "] Volume greater than [5000], 2 extra days allocated.")
-                days = "02"
+           # days = "00"
+           # if volume > 5000:
+           #     printToLog("# INFO - Compound [" + refcode + "] Volume greater than [5000], 2 extra days allocated.")
+            days = "02"
             
             printToLog("# INFO - Compound [" + refcode + "] Number of tasks per node set to ["+str(kPoints)+"]")
             printToLog("# INFO - Compound [" + refcode + "] Memory request set to ["+str(dynamicalRAM)+"G]")

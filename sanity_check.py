@@ -130,7 +130,6 @@ printToLog(f"# INFO - [{len(unrun)}] checks to run. Reasonable batch grouping de
 if round(len(unrun) / grouping) > batchCap:
       printToLog(f"# WARN - Determined number of job(s) [{round(len(unrun) / grouping)}] is greater than batch cap [{batchCap}]")      
 
-
 printToLog("# INFO - Enter integer to choose process to perform.")
 options = {
     "1": f"CALC NODE | Run cif2cell to produce .in files",

@@ -9,7 +9,6 @@ import os
 import subprocess
 import sys
 import re 
-import pandas as pd
 import io
 import csv
 import datetime
@@ -29,7 +28,7 @@ homeDirectory = os.getcwd()#Directory where we are
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
 
 #Make sure there is a directory to process
-Input_Files = os.path.join(homeDirectory, "Input_Files")
+Input_Files = os.path.join(homeDirectory, "Input_All")
 createDirectory(Input_Files, "# WARN - No directory found for input files.", True)
 directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".") and os.path.isfile(os.path.join(os.path.join(Input_Files, directory), directory+".out")) and os.path.isfile(os.path.join(os.path.join(Input_Files, directory), "gipaw."+directory+".out"))]
 
