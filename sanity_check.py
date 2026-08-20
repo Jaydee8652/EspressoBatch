@@ -10,7 +10,6 @@ import datetime
 import time
 import pandas as pd
 from utils.generic_utils import printToLog as pl, createDirectory as cd, cellVolume, writeCSV
-from utils.git_utils import getLocation
 from utils.params import *
 
 #Functions
@@ -53,7 +52,7 @@ else:
     printToLog("# INFO - Following .cif files are available ["+str(list(cifs.values()))+"]")
 
 #Make sure there is a directory for PSEUDOS
-pseudosPath = os.path.join(homeDirectory, "PSEUDOS/")
+pseudosPath = os.path.join(os.path.join(os.path.join(homeDirectory, "utils"), "data"), "PSEUDOS/")
 createDirectory(pseudosPath, "# WARN - No directory found for PSEUDOS. Place .UPF files in or replace the newly created directory at", True)
 
 pseudos = [file for file in os.listdir(pseudosPath) if file.endswith('.UPF') and os.path.isfile(os.path.join(pseudosPath, file))]#Get .UPFs from directory
@@ -70,10 +69,9 @@ else:
 input_path = os.path.join(homeDirectory, "Sanity_Input_Files")
 createDirectory(input_path, "# INFO - Directory for input directories created at ", False)
 
-# Create the SUB submission script
-post = os.path.join(os.path.join(homeDirectory,"utils"), "extract_energy.py")
-
+# Creating slurm submission script
 SANITY_SUB = os.path.join(input_path, f"SANITY_SUB")    
+post = os.path.join(os.path.join(homeDirectory,"utils"), "extract_energy.py")
 with open(SANITY_SUB, "w") as file:
     content = f"""
 #!/bin/bash
@@ -123,9 +121,13 @@ df = df.astype(object)
 unrun = [directory for directory in directories if not str(df.at[directory, "[BATCH_started]"]) == "True" ]    
 
 printToLog("# INFO - Following directories are available to run ["+str(list(unrun))+"]")
+
+# Determines sensible grouping to minimise the amount of individual submissions
 if len(unrun) >= grouping:
-    grouping = math.ceil((len(unrun) % 100) / round(len(unrun) / grouping)) + grouping
-printToLog(f"# INFO - [{len(unrun)}] checks to run. Reasonable batch grouping determined to be [{round(len(unrun) / grouping)}] job(s) each containing [{grouping}] calculations")
+    grouping = math.ceil((len(unrun) % 100) / math.floor(len(unrun) / grouping)) + grouping
+printToLog(f"# INFO - [{len(unrun)}] .cifs to process. Reasonable batch grouping determined to be [{math.ceil(len(unrun) / grouping)}] job(s) each containing [{min(grouping,len(unrun))}] compounds")
+
+
 
 if round(len(unrun) / grouping) > batchCap:
       printToLog(f"# WARN - Determined number of job(s) [{round(len(unrun) / grouping)}] is greater than batch cap [{batchCap}]")      
@@ -288,12 +290,12 @@ if choices.__contains__("2"):
                     with open(batch_path, "a") as batch:
                         writeCSV(df, refcode, "[BATCH_started]", True)
                         writeCSV(df, refcode, "[BATCH_start_time]", now)
-                        writeCSV(df, refcode, "[BATCH_location]", getLocation())
+                        writeCSV(df, refcode, "[BATCH_location]", param_location)
                         
                         print("\n# -Batch data\n", file=batch)
                         print("BATCH_started = "+str(True), file=batch)
                         print("BATCH_start_time = "+str(now), file=batch)
-                        print("BATCH_location = "+str(getLocation()), file=batch)
+                        print("BATCH_location = "+str(param_location), file=batch)
                 df.to_csv(localSheet)
             except subprocess.CalledProcessError as e:
                 printToLog("# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
@@ -314,6 +316,7 @@ if choices.__contains__("3"):
     df["[validated]"] = ""
     df.to_csv(localSheet)
 
+# Validation is done manually to allow more flexibility
 if choices.__contains__("4"):
     high_energy = os.path.join(cifs_path, "high_energy")
     createDirectory(high_energy, "# WARN - No directory found for high energy .cifs, created at", False)

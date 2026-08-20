@@ -18,7 +18,6 @@ import shutil
 import math
 import numpy as np
 from utils.generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, cellVolume
-from utils.git_utils import downloadCSV, uploadCSV, appendCSV, updateCSV, batchCalculations, verify
 
 #Params - can be modified
 rCap = 10
@@ -51,7 +50,7 @@ else:
     printToLog("# INFO - Following .cif files are available ["+str(list(cifs.values()))+"]")
 
 #Make sure there is a directory for PSEUDOS
-pseudosPath = os.path.join(homeDirectory, "PSEUDOS/")
+pseudosPath = os.path.join(os.path.join(os.path.join(homeDirectory, "utils"), "data"), "PSEUDOS/")
 createDirectory(pseudosPath, "# WARN - No directory found for PSEUDOS. Place .UPF files in or replace the newly created directory at", True)
 
 psuedos = [file for file in os.listdir(pseudosPath) if file.endswith('.UPF') and os.path.isfile(os.path.join(pseudosPath, file))]#Get .UPFs from directory
@@ -76,6 +75,8 @@ else:
 
 printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2 3') to choose processes to perform.")
 
+# Being used like STATICS in JAVA is the best allegory I have? 
+# Mainly done for ease of writing, instead of remembering which number is which filter you can just remember "OPT_R_VAL" etc
 OPT_R_VAL = "1"
 OPT_DISORDER = "2"
 OPT_SIZE = "3"
@@ -95,16 +96,17 @@ options = {
     "0": f"All in sequence",
 }
 for key, value in options.items():
-    printToLog(f"# INFO -    [{key}] {value}")
+    printToLog(f"# INFO -    [{key}] {value}") 
 if len(sys.argv) > 1:
-    choices = ' '.join(sys.argv[1:])
+    choices = ' '.join(sys.argv[1:]) # Can take command line inputs ie "python3 cif_sort.py 0"
 else:
     choices = input(">")
 
+# Sanitise choice input 
 invalidInputs = []
 regex = re.compile('[^0-9 ]')
 choices = regex.sub('', choices).strip().split(" ")
-if choices.__contains__("0"):
+if choices.__contains__("0"): #Speed-dial function
     choices = list(options)
     choices.remove("0")
     
@@ -116,6 +118,7 @@ if len(invalidInputs) > 0:
     printToLog("# WARN - The following inputs ["+str(list(set(invalidInputs)))+"] are not supported")
     quit()
 
+#These don't work without the spreadsheet so are removed if it is not detected
 removed = []
 if not dataAvailable and choices.__contains__(OPT_R_VAL):
     choices.remove(OPT_R_VAL)
@@ -169,9 +172,8 @@ createDirectory(unaccounted_elements, "# INFO - No directory found for .cifs wit
 unaccounted_elements_count = len(os.listdir(unaccounted_elements))
 
 if dataAvailable and choices.__contains__(OPT_R_VAL) or choices.__contains__(OPT_DISORDER):
-    df = pd.read_csv(structure_data, encoding="utf-8-sig")
+    df = pd.read_csv(structure_data, encoding="utf-8-sig") # .csvs touched by microsoft (ie opened in excel) are encoded in utf-8-sig
     df.set_index('[REFCODE]', inplace = True)
-
 
 unaccountedElements = {}
 for refcode, filename in cifs.items():
@@ -184,6 +186,8 @@ for refcode, filename in cifs.items():
         lines = cif.readlines()
         for number, line in enumerate(lines, 0):   
             if not line.startswith("#") or line.startswith(""):
+                
+                # Gets cell params to calculate volume
                 if "_cell_length_a" in line:
                     cell_a = float(lines[number].split()[1].split("(")[0])
                     cell_b = float(lines[number+1].split()[1].split("(")[0])
@@ -221,11 +225,13 @@ for refcode, filename in cifs.items():
                             #Increment a copy of the formula dict for every corresponding atom position, counts down for convenience
                             counts[element_symbol] -= 1
 
+    # If we don't have the pseudo, scrap it, we couldn't run it anyway
     if len(unaccounted) > 0:
         printToLog("# INFO - Compound [" + refcode + "] discarded. Found to contain the following atoms not accounted for by .UPF files: ["+ str(unaccounted) +"]")
         shutil.copyfile(os.path.join(original_cifs, filename), os.path.join(unaccounted_elements, refcode + ".cif"))
         continue
 
+    # Both in the .csv
     if choices.__contains__(OPT_R_VAL) or choices.__contains__(OPT_DISORDER):
         printToLog("# INFO - Compound ["+ refcode +"] Looking for structure_data.csv entry")
         if refcode in df.index:
@@ -237,11 +243,13 @@ for refcode, filename in cifs.items():
                     continue
             if choices.__contains__(OPT_DISORDER):
                 disorder = str(df.at[refcode, "[_exptl_DISORDER]"])
+                # Disorder is just a comment, so if the value is nan there is no comment and in theory no disorder
                 if not disorder == "nan":
                     printToLog("# INFO - Compound [" + refcode + "] Discarded. Disordered [" + str(disorder) + "]")
                     shutil.copyfile(os.path.join(original_cifs, filename), os.path.join(disordered, refcode + ".cif"))
                     continue
         else:
+            # If we are using the .csv but it isn't in it discard to be safe 
             printToLog("# WARN - Compound [" + refcode + "] Not present in structure_data.csv")
             continue  
     
@@ -250,22 +258,27 @@ for refcode, filename in cifs.items():
             printToLog("# INFO - Compound [" + refcode + "] Discarded. Cell Volume [" + str(volume) + "] greater than volume cap [" + str(volumeCap) + "]")
             shutil.copyfile(os.path.join(original_cifs, filename), os.path.join(size_capped, refcode + ".cif"))
             continue
+    # Checks if everything was incremented to a multiple of the formula, if not, diagnose what is wrong else validate
     if not all(counts.get(key) % formula_dict.get(key) == 0 and not counts.get(key) == formula_dict.get(key) for key in formula_dict):
+        # Nothing was incremented, empty cif
         if all(counts.get(key) == formula_dict.get(key) for key in formula_dict):
             if choices.__contains__(OPT_EMPTY):        
                 printToLog("# INFO - Compound [" + refcode + "] Discarded. No structural data, all atoms unaccounted for: ["+ str(counts) +"]")
                 shutil.copyfile(os.path.join(original_cifs, filename), os.path.join(empty, refcode + ".cif"))
                 continue
+        # Hydrogen wasn't incremented, no H data
         elif (counts.get("H") == formula_dict.get("H")): 
             if choices.__contains__(OPT_NO_H):        
                 printToLog("# INFO - Compound [" + refcode + "] Discarded. No hydrogen data, unaccounted for atoms: ["+ str(counts) +"]")
                 shutil.copyfile(os.path.join(original_cifs, filename), os.path.join(no_hydrogen, refcode + ".cif"))
                 continue
+        # Everything was incremented properly except H
         elif all(counts.get(key) == 0 or key == "H" for key in formula_dict):
             if choices.__contains__(OPT_INCOM_H):        
                 printToLog("# INFO - Compound [" + refcode + "] Discarded. Incomplete hydrogen data, unaccounted for atoms: ["+ str(counts) +"]")
                 shutil.copyfile(os.path.join(original_cifs, filename), os.path.join(incomplete_hydrogen, refcode + ".cif"))
                 continue
+        # There is something else in the .cif, probably a co-crystal
         else:
             if choices.__contains__(OPT_COCRYS):        
                 printToLog("# INFO - Compound [" + refcode + "] Discarded. Unreported co-crytsal/solvent, unaccounted for atoms: ["+ str(counts) +"]")
@@ -282,6 +295,7 @@ printToLog("# INFO - Moving sorted path ["+str(original_cifs)+"] to ["+str(final
 shutil.copytree(original_cifs, final, dirs_exist_ok=True)
 removeDirectory(original_cifs, "# INFO - Cleaning sorted path at")
 
+# Counts how many of each were processed by doing final - initial counts
 if choices.__contains__(OPT_R_VAL):
     printToLog(f"# INFO - [{'{: >3}'.format(len(os.listdir(r_capped)) - r_capped_count)}] compounds with r factor greater than [{rCap}]")
     
