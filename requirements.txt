@@ -1,2 +1,3 @@
 cif2cell
 pygithub
+octadist==2.6.1
