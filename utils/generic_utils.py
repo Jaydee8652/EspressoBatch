@@ -1,5 +1,4 @@
 #Generic utility functions used by all scripts
-
 import csv
 import datetime
 import time
@@ -30,32 +29,53 @@ def createDirectory(log, path, text, exit):
         if exit:
             quit()
 
-#Remove directory is it exists
+#Remove directory if it exists
 def removeDirectory(log, path, text):
     if os.path.exists(path):
         printToLog(log, text + " ["+ path + "]")
         shutil.rmtree(path)
 
-#Write an entry to the local csv
+#Write an entry to a local csv
 def writeCSV(df, refcode, location, value):
     if not value == "":
         df.loc[refcode, location] = value
 
+# Calculate cell volume from cell params
 def cellVolume(cell_a, cell_b, cell_c, cell_α, cell_β, cell_γ):
     return cell_a * cell_b * cell_c * np.sqrt((1 - (np.cos(cell_α) ** 2) - (np.cos(cell_β) ** 2) - (np.cos(cell_γ)) ** 2) + (2 * np.cos(cell_α) * np.cos(cell_β) * np.cos(cell_γ)))
+
+# Convert alat + vectors to list of cell params
+# returns in order [cell_a, cell_b, cell_c, cell_α, cell_β, cell_γ]
+def parseAlat(Alat, vector1, vector2, vector3):    
+    a = np.multiply(vector1, Alat)
+    b = np.multiply(vector2, Alat)
+    c = np.multiply(vector3, Alat)
+
+    return [np.linalg.norm(a), np.linalg.norm(b), np.linalg.norm(c), vectorAngle(b,c), vectorAngle(a,c), vectorAngle(a,b)]
+
+# Calculate angle between two 3D vectors
+def vectorAngle(A, B):
+    dot_product = np.dot(A, B)
+    magnitude_A = np.linalg.norm(A)
+    magnitude_B = np.linalg.norm(B)
+    
+    return np.degrees(np.arccos(dot_product / (magnitude_A * magnitude_B)))
 
 #Get and decode the current slurm queue. Can be read like a file
 def getQueue(log):
     printToLog(log,"# INFO - Attempting to retrieve current slurm queue.")
     try:
-        out = subprocess.check_output(['squeue --me'],shell=True)
+        # Uses custom output formatting so that job names (in theory) don't get truncated. Refcodes longer than 26 characters will break
+        # Increase 30j if necessary
+        out = subprocess.check_output(['squeue --format="%.10i %.10a %.30j %.2t %.10L %.10M %.6C %.6D %.6m %R" --me'],shell=True)
         out = out.decode("utf-8")
         return out
     except subprocess.CalledProcessError as e:
         printToLog(log,"# INFO - Error retreiving slurm queue.")
         printToLog(log,str(e))
 
-#Get the length of the current slurm queue
+# Get the length of the current slurm queue
+# Only considers jobs ending in _SUB so that other jobs such as jupyter sessions don't interfere
 def getQueueLength(log):
     printToLog(log,"# INFO - Attempting to get the length of current slurm queue.")
 

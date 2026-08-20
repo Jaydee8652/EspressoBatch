@@ -139,5 +139,5 @@ with open(summaryPath, "r") as file:
             writeCSV(df, refcode, "["+str(name)+"]", str(value))
 
 df = df.replace("nan", "")
-df.to_csv(localSheet)#Update local csv
+df.to_csv(localSheet) # Update local csv
 printToLog("# INFO - Compound ["+refcode+"] Appended to .csv")

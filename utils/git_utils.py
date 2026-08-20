@@ -15,13 +15,13 @@ from utils.generic_utils import *
 from utils.params import *
 
 #Main
-homeDirectory = os.getcwd()#Directory where we are
+homeDirectory = os.getcwd() # Directory where we are
 localSheet = os.path.join(homeDirectory, param_sheetPath)
 localFlag = os.path.join(homeDirectory, param_flagPath)
 
 GIT_ACTIVE = False
 
-# Git Authentication
+# Git Authentication - if the params for github have been changed, try to log in with them 
 if not param_token == "github_pat_0000000000000000000000000000000000000000000000000000000000000000000000000000000000" and not param_repo == "REPO_NAME":
     #Imports
     from github import Auth
@@ -43,28 +43,7 @@ if not param_token == "github_pat_0000000000000000000000000000000000000000000000
             all_files.append(str(file).replace('ContentFile(path="','').replace('")',''))
     GIT_ACTIVE = True
 
-local_log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
-utils = os.path.join(homeDirectory, "utils")
-location = os.path.join(utils, "location.txt")
-if not os.path.exists(location): 
-    with open(location, "a") as file:
-        printToLog(local_log," --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - No location data found. Attempting to retreive.")    
-        try:
-            out = subprocess.check_output(['hostname'],shell=True)
-            out = out.decode("utf-8").strip()
-    
-            print(out,file=file)
-            printToLog(local_log,"# INFO - Location determined to be ["+str(out)+"], saved to ["+str(location)+"]")
-            printToLog(local_log,"# INFO - Override manually by changing the contents of ['location.txt']")
-        except subprocess.CalledProcessError as e:
-            printToLog(local_log,"# INFO - Error retreiving llocation data.")
-            printToLog(local_log,str(e))
-
-def getLocation():
-    with open(location, "r") as file:
-        return file.read().strip()
-
-# Set the flag on github
+# Set the flag on github = boolean True/False with True being "is available"
 def setFlag(log, boolean):
     source = log.split(".")[0]
 
@@ -78,46 +57,6 @@ def setFlag(log, boolean):
             repo.update_file(flag.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" ["+str(boolean)+"]", file.read(), flag.sha)
         os.remove(localFlag)        
 
-
-
-#Download csv from github
-def downloadCSV(log):
-    if GIT_ACTIVE:
-        gitContent = repo.get_contents(param_sheetPath).decoded_content.decode()
-    
-        if os.path.isfile(localSheet):
-            printToLog(log, "# INFO - Removing existing local file ["+ localSheet + "]")
-            os.remove(localSheet)# Clear current local copy
-        printToLog(log, "# INFO - Downloading ["+param_sheetPath+"] at ["+param_sheetPath+"] from [REPO - "+param_repo+"] - DO NOT CANCEL")
-        with open(localSheet, 'a') as file:
-            file.write(gitContent)# Save data to local copy
-        return localSheet
-    else:
-        printToLog(log, "# INFO - Git integration inactive. Retreiving local .csv ["+param_sheetPath+"]")
-        return localSheet
-
-
-
-#Upload csv to github
-def uploadCSV(log):
-    if GIT_ACTIVE:
-        git = repo.get_contents(param_sheetPath)
-    
-        with open(localSheet, 'r') as file:
-            printToLog(log, "# INFO - Attempting to update ["+param_sheetPath+"] at ["+param_sheetPath+"] in [REPO - "+param_repo+"] - DO NOT CANCEL")
-            source = log.split(".")[0]
-    
-            localContent = file.read()
-            repo.update_file(git.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" [sheet.csv]", localContent, git.sha)#Update global .csv
-            setFlag(log, "True")
-            printToLog(log, "# INFO - Updated ["+param_sheetPath+"] at ["+param_sheetPath+"] in [REPO - "+param_repo+"]")
-            if os.path.isfile(localSheet):
-                os.remove(localSheet)# Clear current local copy
-    else:
-        printToLog(log, "# INFO - Git integration inactive. Updated local .csv ["+param_sheetPath+"]")
-
-
-    
 # Reference the flag on github, ensures the global .csv is not altered by two scripts at once
 def verify(log):
     if GIT_ACTIVE:
@@ -131,7 +70,7 @@ def verify(log):
                 return True
             else:
                 printToLog(log, "# INFO - Master .csv currently in use. Waiting for availability")
-                time.sleep(30)
+                time.sleep(30) # Wait 30 seconds before trying again
                 return verify(log)
     else:
         printToLog(log, "# INFO - Git integration inactive. Attempting to retrieve local .csv")
@@ -140,9 +79,42 @@ def verify(log):
             initSheet(log)
         return True
 
+#Download csv from github
+def downloadCSV(log):
+    if GIT_ACTIVE:
+        gitContent = repo.get_contents(param_sheetPath).decoded_content.decode()
+    
+        if os.path.isfile(localSheet):
+            printToLog(log, "# INFO - Removing existing local file ["+ localSheet + "]")
+            os.remove(localSheet) # Clear current local copy
+        printToLog(log, "# INFO - Downloading ["+param_sheetPath+"] at ["+param_sheetPath+"] from [REPO - "+param_repo+"] - DO NOT CANCEL")
+        with open(localSheet, 'a') as file:
+            file.write(gitContent) # Save data to local copy
+        return localSheet
+    else:
+        printToLog(log, "# INFO - Git integration inactive. Retreiving local .csv ["+param_sheetPath+"]")
+        return localSheet
 
+#Upload csv to github
+def uploadCSV(log):
+    if GIT_ACTIVE:
+        git = repo.get_contents(param_sheetPath)
+    
+        with open(localSheet, 'r') as file:
+            printToLog(log, "# INFO - Attempting to update ["+param_sheetPath+"] at ["+param_sheetPath+"] in [REPO - "+param_repo+"] - DO NOT CANCEL")
+            source = log.split(".")[0]
+    
+            localContent = file.read()
+            repo.update_file(git.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" [sheet.csv]", localContent, git.sha) # Update global .csv
+            setFlag(log, "True")
+            printToLog(log, "# INFO - Updated ["+param_sheetPath+"] at ["+param_sheetPath+"] in [REPO - "+param_repo+"]")
+            if os.path.isfile(localSheet):
+                os.remove(localSheet) # Clear current local copy
+    else:
+        printToLog(log, "# INFO - Git integration inactive. Updated local .csv ["+param_sheetPath+"]")
 
-# Appends the refcode of all local input directories to a local .csv to be referenced by other scripts
+# Appends the refcode of all validated cif files to a local .csv to be referenced by other scripts 
+# if github is enables the local .csv is a copy of the global .csv that will replace it
 def appendCSV(log):
     processedCount = 0    
     printToLog(log,"# INFO - Attempting to append sheet at ["+str(localSheet)+"]")
@@ -150,16 +122,19 @@ def appendCSV(log):
     if not os.path.isfile(localSheet):
         printToLog(log, "# WARN - No local .csv found.")
         quit()
-        
-    Input_Files = os.path.join(homeDirectory, "Input_Files")
-    createDirectory(log, Input_Files, "# WARN - No directory found for input files.", True)
-    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(Input_Files, directory), "INCOMPLETE.txt"))]
 
-    directories = sorted(directories)
-    printToLog(log,"# INFO - The following input directories are available ["+str(directories)+"]")
+    cifs_path = os.path.join(homeDirectory, "cifs")
+    createDirectory(log,cifs_path, "# WARN - No directory found for .cifs to process.", False)
+    
+    validated = os.path.join(cifs_path, "validated")
+    createDirectory(log,validated, "# WARN - No directory found for .cifs to process. Place .cif files in or replace the newly created directory at ["+validated+"]", True)
+
+    cifs = sorted([os.path.splitext(file)[0].replace(".cif", "") for file in sorted(os.listdir(validated)) if file.endswith('.cif') and os.path.isfile(os.path.join(validated, file))])
+
+    printToLog(log,"# INFO - The following input directories are available ["+str(cifs)+"]")
     
     df = pd.read_csv(localSheet)
-    for refcode in directories:
+    for refcode in cifs:
         if refcode in df['[REFCODE]'].values:
             printToLog(log,"# INFO - Compound ["+ refcode +"] Already present in sheet")
         else:           
@@ -170,66 +145,7 @@ def appendCSV(log):
     df.to_csv(localSheet, index=False)
     printToLog(log,"# INFO - Successfully appended ["+str(processedCount)+"] compounds to sheet at ["+str(localSheet)+"]")
 
-
-def isolateFailuresInCSV(log):
-    failureCount = 0    
-    printToLog(log,"# INFO - Attempting to find failures in sheet at ["+str(localSheet)+"]")
-
-    if not os.path.isfile(localSheet):
-        printToLog(log, "# WARN - No local .csv found.")
-        quit()
-
-    failures = os.path.join(homeDirectory, "failures")
-    createDirectory(log, failures, "# WARN - No directory found for failed input files.", False)
-    previous = [directory for directory in os.listdir(failures) if os.path.isdir(os.path.join(failures, directory)) and not directory.startswith(".")]
-    
-    Input_Files = os.path.join(homeDirectory, "Input_Files")
-    createDirectory(log, Input_Files, "# WARN - No directory found for input files.", True)
-    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".")]
-
-    directories = sorted(directories)
-    printToLog(log,"# INFO - The following input directories are available ["+str(directories)+"]")
-    
-    df = pd.read_csv(localSheet)
-    df.set_index('[REFCODE]', inplace = True)
-    for refcode, row in df.iterrows():        
-        if previous.__contains__(refcode):
-            continue
-        if not str(row["[BATCH_started]"]) == "True":
-            continue
-        
-        failed = False
-        refcodeDirectory = os.path.join(Input_Files, refcode)
-        
-        if directories.__contains__(refcode):            
-            if not str(row["[BATCH_done]"]) == "True":
-                if not isQueued(log, refcode):
-                    printToLog(log,"# INFO - Compound ["+ refcode +"] Did not finish")
-                    failed = True
-            else:
-                if not str(row["[PWSCF_done]"]) == "True":
-                    printToLog(log,"# INFO - Compound ["+ refcode +"] PWSCF Did not finish")
-                    failed = True
-
-                if not str(row["[GIPAW_done]"]) == "True":
-                    printToLog(log,"# INFO - Compound ["+ refcode +"] GIPAW Did not finish")
-                    failed = True
-
-                if str(row["[PWSCF_finalEnergy]"]) == "nan":
-                    printToLog(log,"# INFO - Compound ["+ refcode +"] Did not converge")
-                    failed = True
-        else:
-            printToLog(log,"# INFO - Compound ["+ refcode +"] Not present on this cluster")
-        if failed:
-            shutil.copytree(refcodeDirectory, os.path.join(failures, refcode))
-            failureCount += 1
-        
-    printToLog(log,"# INFO - Determined that ["+str(failureCount)+"] calculations have failed")
-
-
-
-
-# Extracts data summary file and updates a local .csv
+# Extracts data from summary files and updates a local .csv
 def updateCSV(log):
     processedCount = 0
     printToLog(log,"# INFO - Attempting to update sheet at ["+str(localSheet)+"]")
@@ -239,8 +155,7 @@ def updateCSV(log):
     
     summariesPath = os.path.join(homeDirectory, "Summary_Files")
     createDirectory(log,summariesPath, "# INFO - No directory found for summary files, creating at ["+str(summariesPath)+"]", False)
-    summaryFiles = [file for file in os.listdir(summariesPath) if file.endswith('_summary.txt') and os.path.isfile(os.path.join(summariesPath, file))]#Get .UPFs from directory
-    summaryFiles = sorted(summaryFiles)
+    summaryFiles = sorted([file for file in os.listdir(summariesPath) if file.endswith('_summary.txt') and os.path.isfile(os.path.join(summariesPath, file))])
     printToLog(log,"# INFO - The following summaries are available ["+str(summaryFiles)+"]")
 
     df = pd.read_csv(localSheet)  
@@ -263,13 +178,11 @@ def updateCSV(log):
             processedCount += 1
 
     df = df.replace("nan", "")
-    df.to_csv(localSheet)#Update local csv
+    df.to_csv(localSheet) # Update local csv
     printToLog(log,"# INFO - Successfully updated data in sheet at ["+str(localSheet)+"] for ["+str(processedCount)+"] compounds")
 
-
-
-# References and updates a local .csv to submit requests to slurm, only running calculations not already flagged as batched
-# Batches 'batchCount' every run to avoid requesting too many resources at once 
+# References and updates a local .csv to submit requests to slurm, only runs calculations not already flagged as batched
+# Batches up to 'batchCount' (16) every run to avoid requesting too many resources at once 
 def batchCalculations(log, batchCount):
     printToLog(log,"# INFO - Attempting to batch ["+str(batchCount)+"] calculations")
     if not os.path.isfile(localSheet):
@@ -313,14 +226,14 @@ def batchCalculations(log, batchCount):
                         with open(batch_path, "a") as batch:
                             writeCSV(df, refcode, "[BATCH_started]", True)
                             writeCSV(df, refcode, "[BATCH_start_time]", now)
-                            writeCSV(df, refcode, "[BATCH_location]", getLocation())
+                            writeCSV(df, refcode, "[BATCH_location]", param_location)
                             
                             print("\n# -Batch data\n", file=batch)
                             print("BATCH_started = "+str(True), file=batch)
                             print("BATCH_start_time = "+str(now), file=batch)
-                            print("BATCH_location = "+str(getLocation()), file=batch)
+                            print("BATCH_location = "+str(param_location), file=batch)
                             
-                            printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(getLocation())+"]")
+                            printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(param_location)+"]")
                             processedCount += 1
                     except subprocess.CalledProcessError as e:
                         printToLog(log,"# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
@@ -334,22 +247,125 @@ def batchCalculations(log, batchCount):
     if processedCount < batchCount:
         printToLog(log,"# INFO - No more calculations to batch!")
     getQueueLength(log)
-        
-#Create sheet
-def initSheet(log):
-    if os.path.isfile(localSheet):
-        printToLog(log,"# INFO - Removing existing local file ["+ localSheet + "]")
-        os.remove(localSheet)# Clear current local copy
-        
-    printToLog(log,"# INFO - Creating new sheet ["+ localSheet + "]")
-    with open(localSheet, 'a') as file:
-        file.write("[REFCODE]")
-    df = pd.read_csv(localSheet)
-    df = pd.concat([df, pd.DataFrame({"[REFCODE]": ["init"]})], ignore_index=True)    
 
-    df["[BATCH_location]"] = ["Abyss"]    
-    df["[BATCH_started"] = ["True"]
-    df.to_csv(localSheet, index=False)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Unused
+
+
+#def initSheet(log):
+#    if os.path.isfile(localSheet):
+#        printToLog(log,"# INFO - Removing existing local file ["+ localSheet + "]")
+#        os.remove(localSheet)# Clear current local copy
+        
+#    printToLog(log,"# INFO - Creating new sheet ["+ localSheet + "]")
+#    with open(localSheet, 'a') as file:
+#        file.write("[REFCODE]")
+#    df = pd.read_csv(localSheet)
+#    df = pd.concat([df, pd.DataFrame({"[REFCODE]": ["init"]})], ignore_index=True)    
+
+#    df["[BATCH_location]"] = ["Abyss"]    
+#    df["[BATCH_started"] = ["True"]
+#    df.to_csv(localSheet, index=False)
+
+# Unused - too slow to be helpful
+#def isolateFailuresInCSV(log):
+#    failureCount = 0    
+#    printToLog(log,"# INFO - Attempting to find failures in sheet at ["+str(localSheet)+"]")
+
+#    if not os.path.isfile(localSheet):
+#        printToLog(log, "# WARN - No local .csv found.")
+#        quit()
+
+#    failures = os.path.join(homeDirectory, "failures")
+#    createDirectory(log, failures, "# WARN - No directory found for failed input files.", False)
+#    previous = [directory for directory in os.listdir(failures) if os.path.isdir(os.path.join(failures, directory)) and not directory.startswith(".")]
+#    
+#    Input_Files = os.path.join(homeDirectory, "Input_Files")
+#    createDirectory(log, Input_Files, "# WARN - No directory found for input files.", True)
+#    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".")]
+
+#    directories = sorted(directories)
+#    printToLog(log,"# INFO - The following input directories are available ["+str(directories)+"]")
+    
+#    df = pd.read_csv(localSheet)
+#    df.set_index('[REFCODE]', inplace = True)
+#    for refcode, row in df.iterrows():        
+#        if previous.__contains__(refcode):
+#            continue
+#        if not str(row["[BATCH_started]"]) == "True":
+#            continue
+        
+#        failed = False
+#        refcodeDirectory = os.path.join(Input_Files, refcode)
+        
+#        if directories.__contains__(refcode):            
+#            if not str(row["[BATCH_done]"]) == "True":
+#                if not isQueued(log, refcode):
+#                    printToLog(log,"# INFO - Compound ["+ refcode +"] Did not finish")
+#                    failed = True
+#            else:
+#                if not str(row["[PWSCF_done]"]) == "True":
+#                    printToLog(log,"# INFO - Compound ["+ refcode +"] PWSCF Did not finish")
+#                    failed = True
+
+#                if not str(row["[GIPAW_done]"]) == "True":
+#                    printToLog(log,"# INFO - Compound ["+ refcode +"] GIPAW Did not finish")
+#                    failed = True
+
+#                if str(row["[PWSCF_finalEnergy]"]) == "nan":
+#                    printToLog(log,"# INFO - Compound ["+ refcode +"] Did not converge")
+#                    failed = True
+#        else:
+#            printToLog(log,"# INFO - Compound ["+ refcode +"] Not present on this cluster")
+#        if failed:
+#            shutil.copytree(refcodeDirectory, os.path.join(failures, refcode))
+#            failureCount += 1
+        
+#    printToLog(log,"# INFO - Determined that ["+str(failureCount)+"] calculations have failed")
+
+# Try to determine location from the host name - not always very successful - unused
+# "local_log" Should in theory be the log of whatever script is currently trying to use getLocation() 
+
+#local_log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
+#utils = os.path.join(homeDirectory, "utils")
+#location = os.path.join(utils, "location.txt")
+#if not os.path.exists(location): 
+#    with open(location, "a") as file:
+#        printToLog(local_log," --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - No location data found. Attempting to retreive.")    
+#        try:
+#            out = subprocess.check_output(['hostname'],shell=True)
+#            out = out.decode("utf-8").strip()
+#    
+#            print(out,file=file)
+#            printToLog(local_log,"# INFO - Location determined to be ["+str(out)+"], saved to ["+str(location)+"]")
+#            printToLog(local_log,"# INFO - Override manually by changing the contents of ['location.txt']")
+#        except subprocess.CalledProcessError as e:
+#            printToLog(local_log,"# INFO - Error retreiving location data.")
+#            printToLog(local_log,str(e))
+
+#def getLocation():
+#    with open(location, "r") as file:
+#        return file.read().strip() # Simply reads the file
 
 
