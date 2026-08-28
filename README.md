@@ -16,7 +16,7 @@ pip install -r requirements.txt
 ```
 
 
-Edit 'utils/params.py' 
+### Edit 'utils/params.py' 
 
 
 ### User Specific Parameters
@@ -49,7 +49,9 @@ module load scipy-stack/2023b
 # Git integration
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
-### To activate this feature, enter 'utils/params.py' 
+### To activate this feature:
+
+### Edit 'utils/params.py' 
 
 -Replace the value for "param_repo" with the name of a github repository you control
 
