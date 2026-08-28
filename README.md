@@ -99,28 +99,28 @@ Creates the 'Sanity_Input_Files' directory and presents the user with 4 processe
 
  - 2:  Batches all sanity check calculations to slurm.
  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted. These calculations will run 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split the task across 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;more slurm jobs.
+Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted. These calculations will run 
+sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split the task across 
+more slurm jobs.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All calculations will be batched at once, regardless of group size as long as the number of jobs requested does not exceed 16.
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Automatcially logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
+All calculations will be batched at once, regardless of group size as long as the number of jobs requested does not exceed 16.
+Automatcially logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Summary files are produced at the end of each calculation by 'extract_energy.py'.
+Summary files are produced at the end of each calculation by 'extract_energy.py'.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
+The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
 
  - 3:  Calculate relative energies for all outputs in kJ mol⁻¹ molecule⁻¹
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Should only be run after all calculations are complete. The lowest energy output is used to 'zero' all other energies. 
+Should only be run after all calculations are complete. The lowest energy output is used to 'zero' all other energies. 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The energy of each refcode can then be inspected manually, structures with reasonable energies can be marked to be retained.
+The energy of each refcode can then be inspected manually, structures with reasonable energies can be marked to be retained.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This is done by entering 'True' in the [validated] column for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
+This is done by entering 'True' in the [validated] column for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
 
  - 4:  Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Discarded structures are saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that the test can be run again with different parameters if desired.
+Discarded structures are saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that the test can be run again with different parameters if desired.
 
 
 ## qe_cif2cell.py
