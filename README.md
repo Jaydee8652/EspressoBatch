@@ -72,9 +72,9 @@ If the provided .cif files are from the Cambridge Structural Database, a .csv of
 
 On the first run this script will create the 'original_cifs' directory. Place .cif files in 'original_cifs' and rerun, the user will then be presented with different filtering settings. Any combination of these filters can be run through an integer input. 
 
- - 1:  Discard structures with r factor greater than [{rCap} (default: 10)] *(This data is stored in 'structure_data.csv')
- - 2:  Discard structures flagged as disordered by their CSD author *(This data is stored in 'structure_data.csv')
- - 3:  Discard structures with volume greater than [{volumeCap} (default: 6000)]
+ - 1:  Discard structures with r factor greater than [{rCap} default: 10] (This data is stored in 'structure_data.csv')
+ - 2:  Discard structures flagged as disordered by their CSD author (This data is stored in 'structure_data.csv')
+ - 3:  Discard structures with volume greater than [{volumeCap} default: 6000]
  - 4:  Discard structures without structural data
  - 5:  Discard structures without hydrogen data
  - 6:  Discard structures with incomplete hydrogen data
@@ -99,16 +99,16 @@ Creates the 'Sanity_Input_Files' directory and presents the user with 4 processe
 
  - 2:  Batches all sanity check calculations to slurm.
  
-Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted. These calculations will run 
+ * Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted. These calculations will run 
 sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split the task across 
 more slurm jobs.
 
-All calculations will be batched at once, regardless of group size as long as the number of jobs requested does not exceed 16.
+ * All calculations will be batched at once, regardless of group size as long as the number of jobs requested does not exceed 16.
 Automatcially logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
 
-Summary files are produced at the end of each calculation by 'extract_energy.py'.
+ * Summary files are produced at the end of each calculation by 'extract_energy.py'.
 
-The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
+ * The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
 
  - 3:  Calculate relative energies for all outputs in kJ mol⁻¹ molecule⁻¹
 
