@@ -145,6 +145,7 @@ Will generate quantum-espresso input files with calculation parameters defined i
 On the first run this script will create 'qe_params.csv' with default settings. Adding new rows to 'qe_params.csv' will create multiple sets of calculations, each set will be given its own directory. Input files will be created for all sets with that sets defined parameters.
 
 | set_id | test_time | ecutwfc | ecutrho_factor | conv_thr | q_gipaw | calculation | volume_cap | atoms_to_optimise |
+| ------ | --------- | ------- | -------------- | -------- | ------- | ----------- | ---------- | ----------------- |
 | MAIN   | 10        | 55.0    | 8.0            | 1.D-6    | 0.01    | relax       | 0          | H                 |
 
 
