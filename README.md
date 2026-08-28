@@ -115,6 +115,7 @@ Creates the 'Sanity_Input_Files' directory and presents the user with 4 processe
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Should only be run after all calculations are complete. The lowest energy output is used to 'zero' all other energies. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The energy of each refcode can then be inspected manually, structures with reasonable energies can be marked to be retained.
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This is done by entering 'True' in the [validated] column for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
 
  - 4:  Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'.
