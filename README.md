@@ -99,9 +99,7 @@ Creates the 'Sanity_Input_Files' directory and presents the user with 4 processe
 
  - 2:  Batches all sanity check calculations to slurm.
  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted.
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;These calculations will run sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the task across more slurm jobs.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted. These calculations will run sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split the task across more slurm jobs.
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All calculations will be batched at once, regardless of group size as long as the number of jobs requested does not exceed 16.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Automatcially logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
