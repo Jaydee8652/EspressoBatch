@@ -31,11 +31,11 @@ pip install -r requirements.txt
 
 ### Cluster Specific Parameters
 
--Replace the value for "param_location" with the human readable name of the cluster (ie "Rorqual")
+- Replace the value for "param_location" with the human readable name of the cluster (ie "Rorqual")
 
--Replace the value for "param_cores" with the number of cores on each node 
+- Replace the value for "param_cores" with the number of cores on each node 
 
--Replace the value for "param_memory" with the available memory of each node in G
+- Replace the value for "param_memory" with the available memory of each node in G
 
 (See node characteristics for your cluster: https://docs.alliancecan.ca/wiki/)
 
