@@ -107,6 +107,7 @@ Creates the 'Sanity_Input_Files' directory and presents the user with 4 processe
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Automatcially logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Summary files are produced at the end of each calculation by 'extract_energy.py'.
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
 
  - 3:  Calculate relative energies for all outputs in kJ mol⁻¹ molecule⁻¹
