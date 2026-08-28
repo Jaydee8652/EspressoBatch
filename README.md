@@ -32,8 +32,8 @@ git clone https://github.com/Jaydee8652/EspressoBatch.git; cd EspressoBatch/; mo
 
 ### You can now run calculations!
 
-[!NOTE]
-It should be noted that the scipy-stack must to be reloaded every time you connect to the cluster. Creating an alias to do this automatically is recommended.
+ [!NOTE]
+ It should be noted that the scipy-stack must to be reloaded every time you connect to the cluster. Creating an alias to do this automatically is recommended.
 
 ```
 module load scipy-stack/2023b
