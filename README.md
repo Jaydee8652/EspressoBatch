@@ -10,7 +10,7 @@ git clone https://github.com/Jaydee8652/EspressoBatch.git; cd EspressoBatch/; mo
 ### Edit 'utils/params.py' 
 
 
-### User Specific Parameters
+#### User Specific Parameters
 
 - Replace the value for "param_email" with an email you control. Slurm events will be forwarded to this email
 
@@ -20,7 +20,7 @@ git clone https://github.com/Jaydee8652/EspressoBatch.git; cd EspressoBatch/; mo
 
 
 
-### Cluster Specific Parameters
+#### Cluster Specific Parameters
 
 - Replace the value for "param_location" with the human readable name of the cluster (ie "Rorqual")
 
