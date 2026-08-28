@@ -21,11 +21,11 @@ pip install -r requirements.txt
 
 ### User Specific Parameters
 
--Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
+- Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
 
--Replace the value for "param_account" with your account on the cluster
+- Replace the value for "param_account" with your account on the cluster
 
--The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
+- The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 
 
 
@@ -53,15 +53,15 @@ By default, batch status and calculation outputs are saved to a .csv locally. Op
 
 ### Edit 'utils/params.py' 
 
--Replace the value for "param_repo" with the name of a github repository you control
+- Replace the value for "param_repo" with the name of a github repository you control
 
--Replace the value for "param_token" with an auth token that has read and write permissions on said repo
+- Replace the value for "param_token" with an auth token that has read and write permissions on said repo
 
 ### In the repository:
 
--Create a new .csv file called 'sheet.csv' in the home directory
+- Create a new .csv file called 'sheet.csv' in the home directory
 
--Create a new .txt file called 'sheet_flag.txt' in the home directory, containing the string 'True'
+- Create a new .txt file called 'sheet_flag.txt' in the home directory, containing the string 'True'
 
 
 
