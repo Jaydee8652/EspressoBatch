@@ -14,11 +14,9 @@ module load scipy-stack/2023b
 ```
 pip install -r requirements.txt
 ```
-```
-cd utils
-```
 
-Edit 'params.py' 
+
+Edit 'utils/params.py' 
 
 
 User Specific Parameters
