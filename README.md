@@ -70,31 +70,14 @@ If the provided .cif files are from the Cambridge Structural Database, a .csv of
 
 On the first run this script will create the 'original_cifs' directory. Place .cif files in 'original_cifs' and rerun, the user will then be presented with different filtering settings. Any combination of these filters can be run through an integer input. 
 
- - 1:
-Discard structures with r factor greater than [{rCap} (default: 10)]
-*(This data is stored in 'structure_data.csv')
-
- - 2: 
-Discard structures flagged as disordered by their CSD author
-*(This data is stored in 'structure_data.csv')
-
- - 3: 
-Discard structures with volume greater than [{volumeCap} (default: 6000)]
-
- - 4:
-Discard structures without structural data
-
- - 5:
-Discard structures without hydrogen data
-
- - 6:
-Discard structures with incomplete hydrogen data
-
- - 7:
-Discard structures with unreported cocrystals/solvent
-
- - 0:
-"Speed dial" for all filters in sequence
+ - 1:  Discard structures with r factor greater than [{rCap} (default: 10)] *(This data is stored in 'structure_data.csv')
+ - 2:  Discard structures flagged as disordered by their CSD author *(This data is stored in 'structure_data.csv')
+ - 3:  Discard structures with volume greater than [{volumeCap} (default: 6000)]
+ - 4:  Discard structures without structural data
+ - 5:  Discard structures without hydrogen data
+ - 6:  Discard structures with incomplete hydrogen data
+ - 7:  Discard structures with unreported cocrystals/solvent
+ - 0:  "Speed dial" for all filters in sequence
 
 Once the sort is complete .cif files are moved to directories within the 'cifs' directory corresponding to the reason for discard, 'original_cifs' is also moved to this directory. Running the script again will create a new 'original_cifs' to start the process again. Previously sorted .cif files will not be overriden, allowing for a new directory of .cif files to be added to the existing filtered dataset.
 
@@ -110,12 +93,11 @@ Not considered necessary for .cifs obtained from the Cambridge Structural Databa
 
 Creates the 'Sanity_Input_Files' directory and presents the user with 4 processes to run. Any of these processes can be run with an integer input, but they should ideally be performed in order.
 
- - 1:
-Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to perform a "sanity check".
+ - 1:  Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to perform a "sanity check".
 
- - 2: (MUST BE RUN ON HEAD NODE)
-
-  Batches all sanity check calculations to slurm. Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted.
+ - 2:  Batches all sanity check calculations to slurm.
+ 
+  Calculations are grouped into jobs dynamically, with an initial target of 1000 calculations per job submitted.
   These calculations will run sequentually within a job. If calculations are particularly demanding, or speed is a concern, the grouping can reduced to split
   the task across more slurm jobs.
 
@@ -125,7 +107,7 @@ Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to per
   Summary files are produced at the end of each calculation by 'extract_energy.py'
   The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
 
- - 3: Calculate relative energies for all outputs in kJ mol⁻¹ molecule⁻¹
+ - 3:  Calculate relative energies for all outputs in kJ mol⁻¹ molecule⁻¹
 
   Should only be run after all calculations are complete. Determines the relative energy of all outputs in kJ mol⁻¹ molecule⁻¹.
   The lowest energy output is used to 'zero' all other energies. 
@@ -133,7 +115,7 @@ Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to per
   The energy of each refcode can then be inspected manually, structures with reasonable energies can be marked to be retained.
   This is done by entering 'True' in the [validated] column for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
 
- - 4: Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'.
+ - 4:  Discards .cifs from 'cifs/validated' not marked in 'Sanity_Input_Files/sanity_sheet.csv' with [validated] = 'True'.
 
   Discarded structures are saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that the test can be run again with different parameters if desired.
 
