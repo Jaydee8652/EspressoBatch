@@ -49,14 +49,13 @@ module load scipy-stack/2023b
 # Git integration
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
-To activate this feature, enter 'utils/params.py' 
-
+### To activate this feature, enter 'utils/params.py' 
 
 -Replace the value for "param_repo" with the name of a github repository you control
 
 -Replace the value for "param_token" with an auth token that has read and write permissions on said repo
 
-In the repository:
+### In the repository:
 
 -Create a new .csv file called 'sheet.csv' in the home directory
 
