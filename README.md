@@ -27,6 +27,8 @@ Edit 'utils/params.py'
 
 -The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 
+
+
 ### Cluster Specific Parameters
 
 -Replace the value for "param_location" with the human readable name of the cluster (ie "Rorqual")
