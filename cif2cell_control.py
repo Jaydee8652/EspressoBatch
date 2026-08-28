@@ -21,9 +21,7 @@ from utils.params import *
 ntasks_per_node = 1
 mem_per_cpu = 4
 grouping = 1000
-batchCap = 16
-
-testTime = 10 #seconds
+batch_cap = 16
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
@@ -57,10 +55,6 @@ createDirectory(cifs_path, "# WARN - No directory found for .cifs to process.", 
 validated = os.path.join(cifs_path, "validated")
 createDirectory(validated, "# WARN - No directory found for .cifs to process. Place .cif files in or replace the newly created directory at ["+validated+"]", True)
 
-#Make sure there is a directory for the generated input files
-input_path = os.path.join(homeDirectory, "Input_Files")
-createDirectory(input_path, "# INFO - Directory for input directories created at ["+ input_path + "]", False)
-
 cifs = [os.path.splitext(file)[0].replace(".cif", "") for file in sorted(os.listdir(validated)) if file.endswith('.cif') and os.path.isfile(os.path.join(validated, file))]
 
 if len(cifs) == 0:#Make sure there are .cifs in the directory
@@ -69,57 +63,80 @@ if len(cifs) == 0:#Make sure there are .cifs in the directory
 else:
     printToLog("# INFO - " + str(len(cifs)) + " .cif files found at ["+ validated + "]")
 
-unrun = [cif for cif in cifs if not os.path.isdir(os.path.join(input_path, cif))]
-printToLog("# INFO - Following .cif files are available to run ["+str(list(unrun))+"]")
+#Make sure there is a .csv to read from
+qe_params = os.path.join(homeDirectory, "qe_params.csv")
+if not os.path.isfile(qe_params):
+    with open(qe_params, 'a') as file:
+        print("set_id,test_time,ecutwfc,ecutrho_factor,conv_thr,q_gipaw,calculation,volume_cap,atoms_to_optimise",file=file)
+        print("MAIN,10,55.0,8.0,1.D-6,0.01,relax,0,H",file=file)
+    printToLog(f"# WARN - No qe_params.csv found. Initialised with default settings at [{qe_params}]")
+    quit()
 
-seconds = min(grouping,len(unrun)) * testTime
-time_format = time.strftime("00-%H:%M", time.gmtime(seconds))
+printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2') to choose processes to perform.")
+options = {
+    "1": "Run test calculations in a slurm job array",
+    "2": "Run test calculations in current session",
+}
 
-# Determines sensible grouping to minimise the amount of individual submissions
-if len(unrun) >= grouping:
-    grouping = math.ceil((len(unrun) % 100) / math.floor(len(unrun) / grouping)) + grouping
-printToLog(f"# INFO - [{len(unrun)}] .cifs to process. Reasonable batch grouping determined to be [{math.ceil(len(unrun) / grouping)}] job(s) each lasting [{time_format}] and containing [{min(grouping,len(unrun))}] compounds")
-
-if round(len(unrun) / grouping) > batchCap:
-      printToLog(f"# WARN - Determined number of job(s) [{round(len(unrun) / grouping)}] is greater than batch cap [{batchCap}]")      
-
-printToLog("# INFO - Enter atom types to optimise, with spaces between entries ('H O C'). Enter 'All' to optimise all atoms")
+for key, value in options.items():
+    printToLog(f"# INFO -    [{key}] {value}")
 if len(sys.argv) > 1:
-    atomsToOptimise = ' '.join(sys.argv[1:]) # Can take command line inputs ie "python3 cif2cell_control.py H C O"
+    choices = ' '.join(sys.argv[1:])
 else:
-    atomsToOptimise = input(">")
+    choices = input(">")
+ 
 invalidInputs = []
-
-# Input sanitisation - user input of atoms to freeze
-regex = re.compile('[^a-zA-Z ]')
-atomsToOptimise = regex.sub('', atomsToOptimise).strip().split(" ")
-atomsToOptimise = list(set([atom.lower().capitalize() for atom in atomsToOptimise]))
-if atomsToOptimise == [""]: # If the input is blank add "None", needs to have a value for later
-    atomsToOptimise.append("None")
-
-if atomsToOptimise.__contains__("All"): # If there is "All", remove everything else. "H C All" -> "All"
-    atomsToOptimise.clear()
-    atomsToOptimise.append("All")
-if atomsToOptimise.__contains__("None"): # If there is "None", remove everything else. "H C None" -> "None"
-    atomsToOptimise.clear()
-    atomsToOptimise.append("None")
+regex = re.compile('[^0-9 ]')
+choices = list(set(regex.sub('', choices).strip().split(" ")))
+if len(choices) > 1:
+    printToLog("# WARN - Only one process can be run at a time")
+    quit()
     
-for atom in atomsToOptimise:    
-    if not psuedo_elements.__contains__(atom) and not atom == "All" and not atom == "None":
-        invalidInputs.append(atom)
-
-# If we don't have the pseudo for the atom, scrap it, we couldn't run it anyway
+for choice in choices:    
+    if not options.__contains__(choice):
+        invalidInputs.append(choice)
 if len(invalidInputs) > 0:
-    printToLog("# WARN - The following atom types ["+str(list(set(invalidInputs)))+"] are not accounted for by the available .UPF files and have been removed")
-atomsToOptimise = [atom for atom in atomsToOptimise if atom not in invalidInputs]
-printToLog("# INFO - Following atom types selected to be optimised ["+str(atomsToOptimise)+"]")
+    printToLog("# WARN - The following inputs ["+str(list(set(invalidInputs)))+"] are not supported")
+    quit()
+printToLog("# INFO - The following processes have been selected ["+str(sorted(choices,key=int))+"]")
 
-# Creating slurm submission script
-name = f"_QE_CIF2CELL"
-sub = os.path.join(input_path, name)    
-processing = os.path.join(os.path.join(homeDirectory, "utils"), "qe_cif2cell.py")
-with open(sub, "w") as file:
-    content = f"""
+
+df = pd.read_csv(qe_params, encoding="utf-8-sig")
+df.set_index('set_id', inplace = True)
+
+batch_count = 0
+for set_id, row in df.iterrows():
+    printToLog(f"# INFO - Processing set_id [{set_id}]")
+
+    id_directory = os.path.join(homeDirectory, set_id)
+    createDirectory(id_directory, f"# INFO - Directory for paramater set [{set_id}] created at [{id_directory}]", False)
+    df.loc[[set_id]].to_csv(os.path.join(id_directory, "local_params.csv"))
+
+    #Make sure there is a directory for the generated input files
+    input_files = os.path.join(id_directory, "input_files")
+    createDirectory(input_files, f"# INFO - Directory for input directories created at [{input_files}]", False)
+    
+    unrun = [cif for cif in cifs if not os.path.isdir(os.path.join(input_files, cif))]
+    printToLog("# INFO - Following .cif files are available to run ["+str(list(unrun))+"]")
+
+    processing = os.path.join(os.path.join(homeDirectory, "utils"), "qe_cif2cell.py")
+    if choices.__contains__("1"):
+        seconds = min(grouping,len(unrun)) * float(row['test_time'])
+        time_format = time.strftime("00-%H:%M", time.gmtime(seconds))
+        
+        # Determines sensible grouping to minimise the amount of individual submissions
+        if len(unrun) >= grouping:
+            grouping = math.ceil((len(unrun) % 100) / math.floor(len(unrun) / grouping)) + grouping
+        printToLog(f"# INFO - [{len(unrun)}] .cifs to process for set_id [{set_id}]. Reasonable batch grouping determined to be [{math.ceil(len(unrun) / grouping)}] job(s) each lasting [{time_format}] and containing [{min(grouping,len(unrun))}] compounds")
+    
+        if round(len(unrun) / grouping) > batch_cap:
+              printToLog(f"# WARN - Determined number of job(s) [{round(len(unrun) / grouping)}] is greater than batch cap [{batch_cap}]")     
+    
+        # Creating slurm submission script
+        name = f"_QE_CIF2CELL_{set_id}"
+        sub = os.path.join(input_files, name)    
+        with open(sub, "w") as file:
+            content = f"""
 #!/bin/bash
 
 #SBATCH --job-name={name}
@@ -132,54 +149,66 @@ with open(sub, "w") as file:
 #SBATCH --time={time_format}
 #SBATCH --mem-per-cpu={mem_per_cpu}G
 
-
-echo "Running qe_cif2cell checks [$caselist]"
+echo "Running [{set_id}] qe_cif2cell on [$caselist]"
 
 for case in $caselist
 do
 
-    echo "Compound [$case] Starting qe_cif2cell"
+    echo "Compound [$case] Starting [{set_id}] qe_cif2cell"
     cd $case
-    srun --cpus-per-task=1 --ntasks=1 python3 {processing} {" ".join(atomsToOptimise)}
-    
+    srun --cpus-per-task=1 --ntasks=1 python3 {processing} prepare_test
+
     echo "Compound [$case] Running test calculation"
     srun --cpus-per-task=$SLURM_CPUS_PER_TASK pw.x < $case.in > test_$case.out
     srun --cpus-per-task=1 --ntasks=1 python3 {processing}
     
     cd ..    
-    echo "Compound [$case] Finished qe_cif2cell"
+    echo "Compound [$case] Finished [{set_id}] qe_cif2cell"
 
 done
+echo "Finished running [{set_id}] qe_cif2cell on [$caselist]"
+
 """    
-    print(content.lstrip("\n"), file=file)
-    printToLog(f"# INFO - Created [{name}] file at [{sub}]")
+            print(content.lstrip("\n"), file=file)
+            printToLog(f"# INFO - Created [{name}] file at [{sub}]")
+        
+        while len(unrun) > 0 and batch_count <= batch_cap:
+            # Get a group of length "grouping" of cifs not yet processed
+            unrun = unrun[:min(len(unrun), grouping)]
+            printToLog(f"# INFO - [{set_id}] Attempting to batch group of [{min(grouping,len(unrun))}] [{unrun[0]}->{unrun[-1]}]")
+            caselist = ' '.join(unrun)
+        
+            if os.path.exists(sub):
+                try:
+                    for refcode in unrun: 
+                        refcodeDirectory = os.path.join(input_files, refcode)
+                        createDirectory(refcodeDirectory, f"# INFO - Compound [{set_id} {refcode}] No directory found, created at", False)
+        
+                        incomplete = os.path.join(refcodeDirectory, "INCOMPLETE.txt")
+                        with open(incomplete, "a") as file:
+                            print("WARNING, the presence of this file indicates that the qe_cif2cell process did not run to completion. This input should not be run!", file=file)      
+                    subprocess.call(f"module load {param_modules}; cd {input_files}; caselist=\"{caselist}\" sbatch {name}",shell=True)
+                    printToLog(f"# INFO - [{set_id}] Successfully batched group of [{min(grouping,len(unrun))}] [{unrun[0]}->{unrun[-1]}]")
+        
+                    batch_count += 1
+                except subprocess.CalledProcessError as e:
+                    printToLog("# WARN - Error batching calculation")
+                    printToLog(str(e))
+            else:
+                 printToLog("# WARN - sub not present")
+            unrun = [cif for cif in cifs if not os.path.isdir(os.path.join(input_files, cif))]
+    elif choices.__contains__("2"):
+        for refcode in unrun: 
+            printToLog(f"# INFO - Processing compound [{set_id} {refcode}]")
+            
+            refcodeDirectory = os.path.join(input_files, refcode)
+            createDirectory(refcodeDirectory, f"# INFO - Compound [{set_id} {refcode}] No directory found, created at", False)
 
-
-batchCount = 0
-while len(unrun) > 0 and batchCount <= batchCap:
-    # Get a group of length "grouping" of cifs not yet processed
-    unrun = unrun[:min(len(unrun), grouping)]
-    printToLog(f"# INFO - Attempting to batch group of [{min(grouping,len(unrun))}] [{unrun[0]}->{unrun[-1]}]")
-    caselist = ' '.join(unrun)
-
-    if os.path.exists(sub):
-        try:
-            for refcode in unrun: 
-                refcodeDirectory = os.path.join(input_path, refcode)
-                createDirectory(refcodeDirectory, "# INFO - Compound [" + refcode + "] No directory found, created at", False)
-
-                incomplete = os.path.join(refcodeDirectory, "INCOMPLETE.txt")
-                with open(incomplete, "a") as file:
-                    print("WARNING, the presence of this file indicates that the qe_cif2cell process did not run to completion. This input should not be run!", file=file)      
-            subprocess.call(f"module load {param_modules}; cd {input_path}; caselist=\"{caselist}\" sbatch _QE_CIF2CELL",shell=True)
-            #subprocess.call(f"module load {param_modules}; cd {input_path}; caselist=\"{caselist}\" {name}",shell=True)
-
-            printToLog(f"# INFO - Successfully batched group of [{min(grouping,len(unrun))}] [{unrun[0]}->{unrun[-1]}]")
-
-            batchCount += 1
-        except subprocess.CalledProcessError as e:
-            printToLog("# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
-            printToLog(str(e))
-    else:
-         printToLog("# WARN - sub not present")
-    unrun = [cif for cif in cifs if not os.path.isdir(os.path.join(input_path, cif))]
+            incomplete = os.path.join(refcodeDirectory, "INCOMPLETE.txt")
+            with open(incomplete, "a") as file:
+                print("WARNING, the presence of this file indicates that the qe_cif2cell process did not run to completion. This input should not be run!", file=file)
+            try:
+                subprocess.call(f"module load {param_modules}; cd {input_files}; cd {refcode}; python3 {processing} prepare_test; pw.x < {refcode}.in > test_{refcode}.out; python3 {processing}",shell=True)
+            except subprocess.CalledProcessError as e:
+                printToLog(f"# WARN - Error running test calculation for [{refcode}]")
+                printToLog(str(e))

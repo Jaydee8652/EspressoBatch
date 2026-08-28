@@ -52,7 +52,6 @@ printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2') to cho
 options = {
     "1": "Update .csv with output data from all local summary files",
     "2": "Batch ["+str(batchCount)+ "] (to total ["+str(batchTarget)+"] in queue) new calculations to slurm",
-    #"3": "Copy failed input directories to 'failures'", - UNUSED, TOO SLOW TO BE USEFUL
     "0": "All in sequence",
 }
 
