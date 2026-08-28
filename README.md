@@ -13,19 +13,26 @@ $ cd utils
 Edit 'params.py' 
 
 ```
-User Specific
+User Specific Parameters
 -Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
 -Replace the value for "param_account" with your account on the cluster
 -The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 
-Cluster Specific
+Cluster Specific Parameters
 -Replace the value for "param_location" with the human readable name of the cluster (ie "Rorqual")
 -Replace the value for "param_cores" with the number of cores on each node 
--Replace the value for "param_memory" with the available memory on each node
+-Replace the value for "param_memory" with the available memory of each node in G
 (See node characteristics for your cluster: https://docs.alliancecan.ca/wiki/Rorqual/en)
 ```
 
 ### You can now run calculations!
+It should be noted that the scipy-stack must to be reloaded every time you connect to the cluster. Creating an alias to do this automatically is recommended.
+
+```
+$ module load scipy-stack/2023b
+```
+
+# Git integration
 By default, batch status and calculation outputs are saved to a .csv locally. Optionally, github integration can be enabled. This data will instead be saved to a defined repository, allowing the same global database to be referenced across multiple clusters. 
 
 To activate this feature, enter 'utils/params.py' 
@@ -42,6 +49,8 @@ In the repository:
 
 
 # Usage instructions:
+
+
 
 ## cif_sort.py
 ```
@@ -126,8 +135,63 @@ saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that 
 ```
 $ python3 qe_cif2cell.py
 ```
-Will generate quantum-espresso input files from .cifs in 'cifs/validated', automatically run a test calculation, and create a batch file according to the projected resource use.
-Takes a list user input of atom types to optimise, all other atom types will be frozen.
+Will generate quantum-espresso input files with calculation parameters defined in 'qe_params.csv' from .cifs in 'cifs/validated'. Automatically runs test calculations and creates slurm batch files based on the the projected resource use.
+
+On the first run this script will create 'qe_params.csv' with default settings. Adding new rows to 'qe_params.csv' will create multiple sets of calculations, each set will be given its own directory. Input files will be created for all sets with that sets defined parameters.
+
+```
+set_id,test_time,ecutwfc,ecutrho_factor,conv_thr,q_gipaw,calculation,volume_cap,atoms_to_optimise
+MAIN,10,55.0,8.0,1.D-6,0.01,relax,0,H
+```
+
+ ```
+ - set_id (default: MAIN)
+ Human readable name for this "set". 
+ Used as the name of the directory and will be appended to .cif refcodes in the slurm queue and output spreadsheet.
+
+ - test_time (default: 10)
+Time taken for a test calculation to complete (in seconds). 
+Used to estimate the amount of time creating a series of input files will take. Slightly varies with calculation difficulty.
+
+ - ecutwfc (default: 55.0)
+*Default quantumespresso parameter
+
+ - ecutrho_factor: (default: 8.0)
+Multiplier of ecutwfc to produce quantumespresso parameter ecutrho.
+
+ - conv_thr (default: 1.D-6)
+*Default quantumespresso parameter
+
+ - q_gipaw (default: 0.01)
+*Default quantumespresso parameter
+
+ - calculation (default: relax)
+Type of calculation to perform, see quantumespresso manual. 
+Only relax is fully supported by post processing scripts.
+
+ - volume_cap (default: 0)
+The minimum volume at which calculations should be given more time to process.
+Above this number, the time requested from slurm increased from 1 day to 3 days.
+
+ - atoms_to_optimise: (default: H)
+List of atom types to optimise, all other atom types will be frozen.
+Should be seperated by " " (ie: H C O N Co).
+Enter "None" to optimise no atom positions and "All" to optimise all atom positions.
+ ```
+
+Presents the user with 2 processes to run. Only one of these processes can be run at once, through an integer input.
+```
+ - 1:
+Run test calculations in a slurm job array
+
+Determines appropriate groupings of input files based on the time each test calculation will take and submits them to slurm. Empty directories will be created first, and the job array will populate them.
+
+ - 2: 
+Run test calculations in current session
+
+Running test calculations in the current session is more brittle, as if the current session ends the process will stop. It is useful if only a few dozen input files are required as there is no wait for slurm resource allocation.
+ ```
+
 
 
 
