@@ -151,13 +151,21 @@ GIPAW_done = False
 #Main
 log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
 refcodeDirectory = os.getcwd()#Directory where we are
-homeDirectory = os.path.split(os.path.split(refcodeDirectory)[0])[0]
+set_directory = os.path.split(os.path.split(refcodeDirectory)[0])[0]
+homeDirectory = os.path.split(set_directory)[0]
+
 logs = os.path.join(refcodeDirectory, "logs")
 if not os.path.exists(logs):
     os.makedirs(logs)
 
 refcode = os.path.basename(refcodeDirectory)
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Compound ["+refcode+"] Starting "+str(os.path.basename(sys.argv[0]).split(".")[0])+" in ["+str(refcodeDirectory)+"]")
+
+local_params = os.path.join(set_directory, "local_params.csv")
+df = pd.read_csv(local_params, encoding="utf-8-sig")
+
+#params
+set_id = str(df['set_id'].iloc[0])
 
 utils = os.path.join(homeDirectory,"utils")
 
@@ -169,18 +177,18 @@ else:
     printToLog("# WARN - No .csv file found to load atom data.")
     quit()
 
-Output_Files = os.path.join(homeDirectory, "Output_Files")
-createDirectory(Output_Files, "# INFO - No directory found for output files, created at", False)
+output_files = os.path.join(set_directory, "output_files")
+createDirectory(output_files, "# INFO - No directory found for output files, created at", False)
 
-Summary_Files = os.path.join(homeDirectory, "Summary_Files")
-createDirectory(Summary_Files, "# INFO - No directory found for summary files, created at ", False)
+summary_files = os.path.join(set_directory, "summary_files")
+createDirectory(summary_files, "# INFO - No directory found for summary files, created at ", False)
 
 out = os.path.join(refcodeDirectory, refcode+".out")    
 cif = os.path.join(refcodeDirectory, refcode+".cif")
 opt_cif = os.path.join(refcodeDirectory, refcode+"_opt.cif")
 super_mol2 = os.path.join(refcodeDirectory, refcode+"_super.mol2")
 summaryPath = os.path.join(refcodeDirectory, refcode+"_summary.txt")
-summaryCopyPath =os.path.join(Summary_Files, refcode+"_summary.txt")
+summaryCopyPath =os.path.join(summary_files, refcode+"_summary.txt")
 
 cell_mol2 = os.path.join(refcodeDirectory, refcode+"_cell.mol2")
 molecule_mol2 = os.path.join(refcodeDirectory, refcode+"_molecule.mol2")
@@ -229,7 +237,7 @@ with open(summaryPath, "a") as summary:
         with open(batch) as file:
             read = file.read()
         with open(batch, "a") as file:            
-            if not read.__contains__("BATCH_done") and isQueued(log, refcode):
+            if not read.__contains__("BATCH_done") and isQueued(log, set_id+"_"+refcode):
                 print("BATCH_end_time = "+str(now), file=file)       
                 print("BATCH_done = "+str(True), file=file)            
         with open(batch) as file:
@@ -555,6 +563,7 @@ with open(summaryPath, "a") as summary:
                             previous[atom] = sigma
     
                         currentSum = 0
+
                         for activeAtom, activeSigma in previous.items():
                             currentSum += activeSigma
                             for atom, sigma in previous.items():
@@ -809,7 +818,7 @@ with open(summaryPath, "a") as summary:
 shutil.copyfile(summaryPath, summaryCopyPath)
 printToLog("# INFO - Compound ["+ refcode +"] Copied summary file ["+ summaryCopyPath + "]")
 
-outputPath = os.path.join(Output_Files, refcode)
+outputPath = os.path.join(output_files, refcode)
 removeDirectory(outputPath, "# INFO - Compound ["+ refcode +"] Cleaning existing output path at")
 printToLog("# INFO - Compound ["+ refcode +"] Copied output path ["+str(refcodeDirectory)+"] to ["+str(outputPath)+"]")
 shutil.copytree(refcodeDirectory, outputPath)

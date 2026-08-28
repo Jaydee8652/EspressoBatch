@@ -16,6 +16,8 @@ from utils.params import *
 
 #Main
 homeDirectory = os.getcwd() # Directory where we are
+
+qe_params = os.path.join(homeDirectory, "qe_params.csv")
 localSheet = os.path.join(homeDirectory, param_sheetPath)
 localFlag = os.path.join(homeDirectory, param_flagPath)
 
@@ -54,7 +56,7 @@ def setFlag(log, boolean):
         with open(localFlag, "w") as file:
             print(boolean, file=file)
         with open(localFlag, "r") as file:
-            repo.update_file(flag.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" ["+str(boolean)+"]", file.read(), flag.sha)
+            repo.update_file(flag.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" on "+str(param_location)+" ["+str(boolean)+"]", file.read(), flag.sha)
         os.remove(localFlag)        
 
 # Reference the flag on github, ensures the global .csv is not altered by two scripts at once
@@ -105,7 +107,7 @@ def uploadCSV(log):
             source = log.split(".")[0]
     
             localContent = file.read()
-            repo.update_file(git.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" [sheet.csv]", localContent, git.sha) # Update global .csv
+            repo.update_file(git.path, "AC at ["+str(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))+"] by "+str(source)+" on "+str(param_location)+" [sheet.csv]", localContent, git.sha) # Update global .csv
             setFlag(log, "True")
             printToLog(log, "# INFO - Updated ["+param_sheetPath+"] at ["+param_sheetPath+"] in [REPO - "+param_repo+"]")
             if os.path.isfile(localSheet):
@@ -123,6 +125,10 @@ def appendCSV(log):
         printToLog(log, "# WARN - No local .csv found.")
         quit()
 
+    if not os.path.isfile(qe_params):
+        printToLog(log,"# WARN - No qe_params.csv found.")
+        quit()
+    
     cifs_path = os.path.join(homeDirectory, "cifs")
     createDirectory(log,cifs_path, "# WARN - No directory found for .cifs to process.", False)
     
@@ -134,52 +140,79 @@ def appendCSV(log):
     printToLog(log,"# INFO - The following input directories are available ["+str(cifs)+"]")
     
     df = pd.read_csv(localSheet)
-    for refcode in cifs:
-        if refcode in df['[REFCODE]'].values:
-            printToLog(log,"# INFO - Compound ["+ refcode +"] Already present in sheet")
-        else:           
-            printToLog(log,"# INFO - Compound ["+ refcode +"] Appending to sheet")
-            df = pd.concat([df, pd.DataFrame({"[REFCODE]": [refcode]})], ignore_index=True)
-            processedCount += 1
+
+    qe = pd.read_csv(qe_params, encoding="utf-8-sig")
+    qe.set_index('set_id', inplace = True)
+
+    for set_id, row in qe.iterrows():
+        id_directory = os.path.join(homeDirectory, set_id)
+        createDirectory(log,id_directory, f"# INFO - Directory for paramater set [{set_id}] created at [{id_directory}]", False)
+    
+        #Make sure there is a directory to process
+        input_files = os.path.join(id_directory, "input_files")
+        createDirectory(log,input_files, "# WARN - No directory found for input files.", True)
+        directories = sorted([directory for directory in os.listdir(input_files) if os.path.isdir(os.path.join(input_files, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(input_files, directory), "INCOMPLETE.txt"))])
+    
+        for refcode in directories:
+            setid_refcode = set_id + " " + refcode
+            if setid_refcode in df['[REFCODE]'].values:
+                printToLog(log,"# INFO - Compound ["+ setid_refcode +"] Already present in sheet")
+            else:           
+                printToLog(log,"# INFO - Compound ["+ setid_refcode +"] Appending to sheet")
+                df = pd.concat([df, pd.DataFrame({"[REFCODE]": [setid_refcode]})], ignore_index=True)
+                processedCount += 1
 
     df.to_csv(localSheet, index=False)
     printToLog(log,"# INFO - Successfully appended ["+str(processedCount)+"] compounds to sheet at ["+str(localSheet)+"]")
 
 # Extracts data from summary files and updates a local .csv
 def updateCSV(log):
-    processedCount = 0
     printToLog(log,"# INFO - Attempting to update sheet at ["+str(localSheet)+"]")
     if not os.path.isfile(localSheet):
         printToLog(log, "# WARN - No local .csv found.")
         quit()
+
+    if not os.path.isfile(qe_params):
+        printToLog(log,"# WARN - No qe_params.csv found.")
+        quit()
+
+    qe = pd.read_csv(qe_params, encoding="utf-8-sig")
+    qe.set_index('set_id', inplace = True)
+    for set_id, row in qe.iterrows():
+        processedCount = 0
+        printToLog(log,f"# INFO - Processing set_id [{set_id}]")
     
-    summariesPath = os.path.join(homeDirectory, "Summary_Files")
-    createDirectory(log,summariesPath, "# INFO - No directory found for summary files, creating at ["+str(summariesPath)+"]", False)
-    summaryFiles = sorted([file for file in os.listdir(summariesPath) if file.endswith('_summary.txt') and os.path.isfile(os.path.join(summariesPath, file))])
-    printToLog(log,"# INFO - The following summaries are available ["+str(summaryFiles)+"]")
-
-    df = pd.read_csv(localSheet)  
-    df.set_index('[REFCODE]', inplace = True)
-    df = df.astype(str)
-
-    for summary in summaryFiles:
-        refcode = os.path.splitext(summary)[0].replace("_summary", "")
-        printToLog(log,"# INFO - Compound ["+ refcode +"] Processing output data")
-
-        with open(os.path.join(summariesPath, summary), "r") as file:            
-            read = file.read()
-            lines = read.splitlines()
-            
-            for line in lines:
-                if not len(line) == 0 and not line.startswith("#") and not line.startswith("_"):
-                    value = line[line.find("=")+1:].strip()
-                    name = line[:line.find("=")-1].strip()
-                    writeCSV(df, refcode, "["+str(name)+"]", str(value))
-            processedCount += 1
-
-    df = df.replace("nan", "")
-    df.to_csv(localSheet) # Update local csv
-    printToLog(log,"# INFO - Successfully updated data in sheet at ["+str(localSheet)+"] for ["+str(processedCount)+"] compounds")
+        id_directory = os.path.join(homeDirectory, set_id)
+        createDirectory(log,id_directory, f"# INFO - Directory for paramater set [{set_id}] created at [{id_directory}]", False)
+    
+        summary_files = os.path.join(id_directory, "summary_files")
+        createDirectory(log,summary_files, "# INFO - No directory found for summary files, creating at ["+str(summary_files)+"]", False)
+        summaries = sorted([file for file in os.listdir(summary_files) if file.endswith('_summary.txt') and os.path.isfile(os.path.join(summary_files, file))])
+        printToLog(log,"# INFO - The following summaries are available ["+str(summaries)+"]")
+    
+        df = pd.read_csv(localSheet)  
+        df.set_index('[REFCODE]', inplace = True)
+        df = df.astype(str)
+        
+        for summary in summaries:
+            refcode = os.path.splitext(summary)[0].replace("_summary", "")
+            setid_refcode = set_id + " " + refcode
+            printToLog(log,"# INFO - Compound ["+ setid_refcode +"] Processing output data")
+    
+            with open(os.path.join(summary_files, summary), "r") as file:            
+                read = file.read()
+                lines = read.splitlines()
+                
+                for line in lines:
+                    if not len(line) == 0 and not line.startswith("#") and not line.startswith("_"):
+                        value = line[line.find("=")+1:].strip()
+                        name = line[:line.find("=")-1].strip()
+                        writeCSV(df, setid_refcode, "["+str(name)+"]", str(value))
+                processedCount += 1
+        
+        df = df.replace("nan", "")
+        df.to_csv(localSheet) # Update local csv
+        printToLog(log,"# INFO - Successfully updated data in sheet at ["+str(localSheet)+"] for ["+str(processedCount)+"] compounds")
 
 # References and updates a local .csv to submit requests to slurm, only runs calculations not already flagged as batched
 # Batches up to 'batchCount' (16) every run to avoid requesting too many resources at once 
@@ -188,71 +221,84 @@ def batchCalculations(log, batchCount):
     if not os.path.isfile(localSheet):
         printToLog(log, "# WARN - No local .csv found.")
         quit()
-    
-    #Make sure there is a directory to process
-    Input_Files = os.path.join(homeDirectory, "Input_Files")
-    createDirectory(log,Input_Files, "# WARN - No directory found for input files.", True)
-    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(Input_Files, directory), "INCOMPLETE.txt"))]
 
-    numberOfDirectories = len(directories) # determine number of directories
-    if numberOfDirectories == 0:
-        printToLog(log,"# WARN - No directories found in ["+ Input_Files + "]")
+    if not os.path.isfile(qe_params):
+        printToLog(log,"# WARN - No qe_params.csv found.")
         quit()
-    else:
-        printToLog(log,"# INFO - [" + str(numberOfDirectories) + "] directories found at ["+ Input_Files + "]")
-        
+
     processedCount = 0
+    qe = pd.read_csv(qe_params, encoding="utf-8-sig")
+    qe.set_index('set_id', inplace = True)
+    for set_id, row in qe.iterrows():
+        if processedCount >= batchCount:
+            break
+        
+        printToLog(log,f"# INFO - Processing set_id [{set_id}]")
+    
+        id_directory = os.path.join(homeDirectory, set_id)
+        createDirectory(log,id_directory, f"# INFO - Directory for paramater set [{set_id}] created at [{id_directory}]", False)
+    
+        #Make sure there is a directory to process
+        input_files = os.path.join(id_directory, "input_files")
+        createDirectory(log,input_files, "# WARN - No directory found for input files.", True)
+        directories = sorted([directory for directory in os.listdir(input_files) if os.path.isdir(os.path.join(input_files, directory)) and not directory.startswith(".") and not os.path.isfile(os.path.join(os.path.join(input_files, directory), "INCOMPLETE.txt"))])
+    
+        if len(directories) == 0:
+            printToLog(log,"# WARN - No directories found in ["+ input_files + "]")
+            quit()
+        else:
+            printToLog(log,f"# INFO - [{len(directories)}] directories found at [{input_files}]")
 
-    df = pd.read_csv(localSheet)
-    df.set_index('[REFCODE]', inplace = True)
-
-    directories = sorted(directories)
-    for refcode in directories:
-        if processedCount < batchCount:
-            printToLog(log,"# INFO - Processing compound with refcode ["+ refcode +"]")
-            if not str(df.at[refcode, "[BATCH_started]"]) == "True":
-                printToLog(log,"# INFO - Compound with refcode ["+ refcode +"] not previously run, attempting to batch")
-                refcodeDirectory = os.path.join(Input_Files, refcode)
-                
-                QE_SUB = os.path.join(refcodeDirectory, "QE_SUB")
-                batch_path = os.path.join(refcodeDirectory, refcode+"_batch.txt")
-
-                batchCommand = f"module load {param_modules}; cd {refcodeDirectory}; sbatch QE_SUB"
-                if os.path.exists(QE_SUB):
-                    try:
-                        now = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                        subprocess.call(batchCommand,shell=True)
-                        
-                        with open(batch_path, "a") as batch:
-                            writeCSV(df, refcode, "[BATCH_started]", True)
-                            writeCSV(df, refcode, "[BATCH_start_time]", now)
-                            writeCSV(df, refcode, "[BATCH_location]", param_location)
+        df = pd.read_csv(localSheet)  
+        df.set_index('[REFCODE]', inplace = True)
+  
+        for refcode in directories:
+            setid_refcode = set_id + " " + refcode
+            if processedCount < batchCount:
+                printToLog(log,"# INFO - Processing compound with refcode ["+ setid_refcode +"]")
+                if not str(df.at[setid_refcode, "[BATCH_started]"]) == "True":
+                    printToLog(log,"# INFO - Compound with refcode ["+ setid_refcode +"] not previously run, attempting to batch")
+                    refcodeDirectory = os.path.join(input_files, refcode)
+                    
+                    QE_SUB = os.path.join(refcodeDirectory, "QE_SUB")
+                    batch_path = os.path.join(refcodeDirectory, refcode+"_batch.txt")
+    
+                    batchCommand = f"module load {param_modules}; cd {refcodeDirectory}; sbatch QE_SUB"
+                    if os.path.exists(QE_SUB):
+                        try:
+                            now = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                            subprocess.call(batchCommand,shell=True)
                             
-                            print("\n# -Batch data\n", file=batch)
-                            print("BATCH_started = "+str(True), file=batch)
-                            print("BATCH_start_time = "+str(now), file=batch)
-                            print("BATCH_location = "+str(param_location), file=batch)
-                            
-                            printToLog(log,"# INFO - Successfully batched calculation for compound ["+refcode+"] at ["+str(now)+"] on ["+str(param_location)+"]")
-                            processedCount += 1
-                    except subprocess.CalledProcessError as e:
-                        printToLog(log,"# WARN - Error batching calculation for compound with refcode ["+refcode+"]")
-                        printToLog(str(e))
+                            with open(batch_path, "a") as batch:
+                                writeCSV(df, setid_refcode, "[BATCH_started]", True)
+                                writeCSV(df, setid_refcode, "[BATCH_start_time]", now)
+                                writeCSV(df, setid_refcode, "[BATCH_location]", param_location)
+                                
+                                print("\n# -Batch data\n", file=batch)
+                                print("BATCH_started = "+str(True), file=batch)
+                                print("BATCH_start_time = "+str(now), file=batch)
+                                print("BATCH_location = "+str(param_location), file=batch)
+                                
+                                printToLog(log,"# INFO - Successfully batched calculation for compound ["+setid_refcode+"] at ["+str(now)+"] on ["+str(param_location)+"]")
+                                processedCount += 1
+                        except subprocess.CalledProcessError as e:
+                            printToLog(log,"# WARN - Error batching calculation for compound with refcode ["+setid_refcode+"]")
+                            printToLog(log,str(e))
+                    else:
+                        printToLog(log,"# WARN - QE_SUB not present for compound with refcode ["+setid_refcode+"]")
                 else:
-                    printToLog(log,"# WARN - QE_SUB not present for compound with refcode ["+refcode+"]")
+                    printToLog(log,"# INFO - Compound with refcode ["+setid_refcode+"] has been previously batched at ["+str(df.at[setid_refcode, "[BATCH_start_time]"])+"] on ["+str(df.at[setid_refcode, "[BATCH_location]"])+"]")  
             else:
-                printToLog(log,"# INFO - Compound with refcode ["+refcode+"] has been previously batched at ["+str(df.at[refcode, "[BATCH_start_time]"])+"] on ["+str(df.at[refcode, "[BATCH_location]"])+"]")  
-    df.to_csv(localSheet)#Update local csv
-    printToLog(log,"# INFO - ["+str(processedCount)+"] Calculations successfully batched.")
+                break
+        df.to_csv(localSheet)#Update local csv
+        printToLog(log,"# INFO - ["+str(processedCount)+"] Calculations successfully batched.")
+    
     if processedCount < batchCount:
         printToLog(log,"# INFO - No more calculations to batch!")
     getQueueLength(log)
+    
 
-
-
-
-
-
+        
 
 
 
@@ -301,9 +347,9 @@ def batchCalculations(log, batchCount):
 #    createDirectory(log, failures, "# WARN - No directory found for failed input files.", False)
 #    previous = [directory for directory in os.listdir(failures) if os.path.isdir(os.path.join(failures, directory)) and not directory.startswith(".")]
 #    
-#    Input_Files = os.path.join(homeDirectory, "Input_Files")
-#    createDirectory(log, Input_Files, "# WARN - No directory found for input files.", True)
-#    directories = [directory for directory in os.listdir(Input_Files) if os.path.isdir(os.path.join(Input_Files, directory)) and not directory.startswith(".")]
+#    input_files = os.path.join(homeDirectory, "input_files")
+#    createDirectory(log, input_files, "# WARN - No directory found for input files.", True)
+#    directories = [directory for directory in os.listdir(input_files) if os.path.isdir(os.path.join(input_files, directory)) and not directory.startswith(".")]
 
 #    directories = sorted(directories)
 #    printToLog(log,"# INFO - The following input directories are available ["+str(directories)+"]")
@@ -317,7 +363,7 @@ def batchCalculations(log, batchCount):
 #            continue
         
 #        failed = False
-#        refcodeDirectory = os.path.join(Input_Files, refcode)
+#        refcodeDirectory = os.path.join(input_files, refcode)
         
 #        if directories.__contains__(refcode):            
 #            if not str(row["[BATCH_done]"]) == "True":
@@ -352,17 +398,17 @@ def batchCalculations(log, batchCount):
 #location = os.path.join(utils, "location.txt")
 #if not os.path.exists(location): 
 #    with open(location, "a") as file:
-#        printToLog(local_log," --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - No location data found. Attempting to retreive.")    
+#        printToLog(log,local_log," --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - No location data found. Attempting to retreive.")    
 #        try:
 #            out = subprocess.check_output(['hostname'],shell=True)
 #            out = out.decode("utf-8").strip()
 #    
 #            print(out,file=file)
-#            printToLog(local_log,"# INFO - Location determined to be ["+str(out)+"], saved to ["+str(location)+"]")
-#            printToLog(local_log,"# INFO - Override manually by changing the contents of ['location.txt']")
+#            printToLog(log,local_log,"# INFO - Location determined to be ["+str(out)+"], saved to ["+str(location)+"]")
+#            printToLog(log,local_log,"# INFO - Override manually by changing the contents of ['location.txt']")
 #        except subprocess.CalledProcessError as e:
-#            printToLog(local_log,"# INFO - Error retreiving location data.")
-#            printToLog(local_log,str(e))
+#            printToLog(log,local_log,"# INFO - Error retreiving location data.")
+#            printToLog(log,local_log,str(e))
 
 #def getLocation():
 #    with open(location, "r") as file:

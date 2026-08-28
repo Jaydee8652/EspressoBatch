@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import numpy as np
+import re
 
 logs = os.path.join(os.getcwd(), "logs")
 if not os.path.exists(logs):
@@ -65,36 +66,39 @@ def vectorAngle(A, B):
 def getQueue(log):
     printToLog(log,"# INFO - Attempting to retrieve current slurm queue.")
     try:
-        # Uses custom output formatting so that job names (in theory) don't get truncated. Refcodes longer than 26 characters will break
-        # Increase 30j if necessary
-        out = subprocess.check_output(['squeue --format="%.10i %.10a %.30j %.2t %.10L %.10M %.6C %.6D %.6m %R" --me'],shell=True)
+        # Uses custom output formatting so that job names (in theory) don't get truncated. Refcodes longer than 41 characters will break
+        # Increase 45j if necessary
+        out = subprocess.check_output(['squeue --format="%.10i %.10a %.45j %.2t %.10L %.10M %.6C %.6D %.6m %R" --me'],shell=True)
         out = out.decode("utf-8")
         return out
     except subprocess.CalledProcessError as e:
         printToLog(log,"# INFO - Error retreiving slurm queue.")
         printToLog(log,str(e))
 
-# Get the length of the current slurm queue
 # Only considers jobs ending in _SUB so that other jobs such as jupyter sessions don't interfere
-def getQueueLength(log):
-    printToLog(log,"# INFO - Attempting to get the length of current slurm queue.")
-
-    length = 0
+def getQueued(log):
     lines = getQueue(log).splitlines()
+
+    active_jobs = []
     for line in lines:
-        if "_SUB" in line:
-            length += 1
         printToLog(log, line)
+
+        job_id = re.sub('\s{2,}', ' ', line).strip().split(" ")[2]
+        if "_SUB" in job_id:
+            active_jobs.append(job_id)
+        
+    return active_jobs
+
+# Get the length of the current slurm queue
+def getQueueLength(log):
+    length = len(getQueued(log))
     printToLog(log,"# INFO - Slurm queue contains ["+str(length)+"] batched calculations.")
     return length
 
 #Check if a specific refcode is in the queue
 def isQueued(log, refcode):
-    printToLog(log,"# INFO - Compound ["+refcode+"] Checking queue")
-    lines = getQueue(log).splitlines()
-    for line in lines:
-        if refcode+"_SUB" in line:
-            printToLog(log,"# INFO - Compound ["+refcode+"] is currently queued.")
-            return True
+    if getQueued(log).__contains__(refcode+"_SUB"):
+        printToLog(log,"# INFO - Compound ["+refcode+"] is currently queued.")
+        return True
     printToLog(log,"# INFO - Compound ["+refcode+"] is not currently queued.")
     return False

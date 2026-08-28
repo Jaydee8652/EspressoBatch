@@ -18,44 +18,98 @@ import datetime
 import time
 from generic_utils import printToLog as pl, createDirectory as cd, cellVolume
 from params import *
-
-#params
-volumeCap = 0 # = 5000 - Size above which a calculation should be given more time to process
-
-ecutwfc = 55.0
-ecutrho_factor = 8.0
-conv_thr = "1.D-6"
-q_gipaw = 0.01
-
-ecutrho = ecutwfc * ecutrho_factor
+import pandas as pd
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like
     pl(log, info)
 def createDirectory(path, text, exit):
     cd(log, path, text, exit)
-
-def prepare_test(atomsToOptimise):
-    #Make sure there is a directory for PSEUDOS
-    pseudosPath = os.path.join(os.path.join(os.path.join(homeDirectory, "utils"), "data"), "PSEUDOS/")
-    createDirectory(pseudosPath, "# WARN - No directory found for PSEUDOS. Place .UPF files in or replace the newly created directory at", True)
     
-    pseudos = [file for file in os.listdir(pseudosPath) if file.endswith('.UPF') and os.path.isfile(os.path.join(pseudosPath, file))]#Get .UPFs from directory
+#Main
+log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
+
+refcodeDirectory = os.getcwd() #Directory where we are
+input_path = os.path.split(refcodeDirectory)[0]
+set_directory = os.path.split(input_path)[0]
+homeDirectory = os.path.split(set_directory)[0]
+
+refcode = os.path.basename(refcodeDirectory)
+
+if len(sys.argv) > 1:
+    printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
+
+local_params = os.path.join(set_directory, "local_params.csv")
+df = pd.read_csv(local_params, encoding="utf-8-sig")
+
+#params
+set_id = str(df['set_id'].iloc[0])
+ecutwfc = float(df['ecutwfc'].iloc[0])
+ecutrho_factor = float(df['ecutrho_factor'].iloc[0])
+conv_thr = str(df['conv_thr'].iloc[0])
+calculation = str(df['calculation'].iloc[0])
+q_gipaw = float(df['q_gipaw'].iloc[0])
+volume_cap = float(df['volume_cap'].iloc[0])
+atoms_to_optimise = str(df['atoms_to_optimise'].iloc[0])
+
+#Make sure there is a directory to process
+cifs_path = os.path.join(homeDirectory, "cifs")
+createDirectory(cifs_path, "# WARN - No directory found for .cifs to process.", False)
+
+validated = os.path.join(cifs_path, "validated")
+createDirectory(validated, "# WARN - No directory found for .cifs to process. Place .cif files in or replace the newly created directory at ["+validated+"]", True)
+
+cif = os.path.join(validated, refcode+".cif")
+qe_in = os.path.join(refcodeDirectory, refcode+".in")
+gipaw_in = os.path.join(refcodeDirectory, f"gipaw.{refcode}.in")
+test_out = os.path.join(refcodeDirectory, f"test_{refcode}.out")
+
+QE_SUB = os.path.join(refcodeDirectory, "QE_SUB")    
+post = os.path.join(os.path.join(homeDirectory,"utils"), "post_processing.py")
+incomplete = os.path.join(refcodeDirectory, "INCOMPLETE.txt")
+
+
+
+if len(sys.argv) > 1:
+    #Make sure there is a directory for PSEUDOS
+    PSEUDOS = os.path.join(os.path.join(os.path.join(homeDirectory, "utils"), "data"), "PSEUDOS/")
+    createDirectory(PSEUDOS, "# WARN - No directory found for PSEUDOS. Place .UPF files in or replace the newly created directory at", True)
+
+    #Get .UPFs from directory
+    pseudos = [file for file in os.listdir(PSEUDOS) if file.endswith('.UPF') and os.path.isfile(os.path.join(PSEUDOS, file))]
     
     if len(pseudos) == 0:#Make sure there are .UPFs in the directory
-        printToLog("# WARN - No .UPF files found. Place .UPF files in ["+ pseudosPath + "]")
+        printToLog("# WARN - No .UPF files found. Place .UPF files in ["+ PSEUDOS + "]")
         quit()
     else:
-        printToLog("# INFO - " + str(len(pseudos)) + " .UPF files found at ["+ pseudosPath + "]")
+        printToLog("# INFO - " + str(len(pseudos)) + " .UPF files found at ["+ PSEUDOS + "]")
         psuedo_elements = [file.split(".")[0] for file in pseudos]
         printToLog("# INFO - Following elements accounted for ["+str(list(set(psuedo_elements)))+"]")
+
+    # Input sanitisation - user input of atoms to freeze
+    regex = re.compile('[^a-zA-Z ]')
+    atoms_to_optimise = regex.sub('', atoms_to_optimise).strip().split(" ")
+    atoms_to_optimise = list(set([atom.lower().capitalize() for atom in atoms_to_optimise]))
+
+    if atoms_to_optimise.__contains__("All"): # If there is "All", remove everything else. "H C All" -> "All"
+        atoms_to_optimise.clear()
+        atoms_to_optimise.append("All")
+    if atoms_to_optimise.__contains__("None"): # If there is "None", remove everything. "H C None" -> ""
+        atoms_to_optimise.clear()
+
+    invalidInputs = []
+    for atom in atoms_to_optimise:    
+        if not psuedo_elements.__contains__(atom) and not atom == "All":
+            invalidInputs.append(atom)
     
+    # If we don't have the pseudo for the atom, scrap it, we couldn't run it anyway
+    if len(invalidInputs) > 0:
+        printToLog("# WARN - The following atom types ["+str(list(set(invalidInputs)))+"] are not accounted for by the available .UPF files and have been removed")
+    atoms_to_optimise = [atom for atom in atoms_to_optimise if atom not in invalidInputs]
+    printToLog("# INFO - Following atom types selected to be optimised ["+str(atoms_to_optimise)+"]")
+
     printToLog("# INFO - Compound [" + refcode + "] Processing .cif file")
     shutil.copyfile(cif, os.path.join(refcodeDirectory, refcode+".cif"))
-
-    printToLog("# INFO - Following atom types selected to be optimised ["+str(atomsToOptimise)+"]")
-    if atomsToOptimise.__contains__("None"):
-        atomsToOptimise.clear()
 
     try:
         subprocess.run(f"cif2cell -f {cif} -p quantum-espresso --setup-all -o {qe_in}",shell=True)
@@ -74,16 +128,16 @@ def prepare_test(atomsToOptimise):
     
                 line_atom = line.lstrip().split(" ")[0]
                 # Freeze atoms
-                if not atomsToOptimise.__contains__(line_atom) and not atomsToOptimise.__contains__("All") and psuedo_elements.__contains__(line_atom) and len(line.split()) > 3:
+                if not atoms_to_optimise.__contains__(line_atom) and not atoms_to_optimise.__contains__("All") and psuedo_elements.__contains__(line_atom) and len(line.split()) > 3:
                     lines[number] = lines[number].rstrip() + " 0 0 0\n"            
                 
                 if "&SYSTEM" in line:
                     content = f"""
 &CONTROL
-  calculation = 'relax'
+  calculation = '{calculation}'
   prefix = '{refcode}'
   outdir = '{refcodeDirectory}/'
-  pseudo_dir = '{pseudosPath}'
+  pseudo_dir = '{PSEUDOS}'
   nstep = 0
 /
 
@@ -94,7 +148,7 @@ def prepare_test(atomsToOptimise):
                     del lines[number+1]
                     content = f"""
   ecutwfc = {ecutwfc}
-  ecutrho = {ecutrho}
+  ecutrho = {ecutwfc * ecutrho_factor}
   vdw_corr = 'grimme-d3'
   dftd3_version = 6
 /
@@ -147,8 +201,9 @@ def prepare_test(atomsToOptimise):
 """
             print(content.lstrip(), file=file)
         printToLog("# INFO - Compound [" + refcode + "] Created gipaw .in file at ["+gipaw_in+"]")
+        printToLog("# INFO - Compound [" + refcode + "] Running test calculation")
 
-def process_test():
+else:
     # Process test result
     if os.path.exists(test_out):
         printToLog("# INFO - Compound [" + refcode + "] Processing test output file")
@@ -195,19 +250,19 @@ def process_test():
                         printToLog(f"# INFO - Compound [{refcode}] Found to have the following dimensions [a {round(cell_a, 4)}] [b {round(cell_b, 4)}] [c {round(cell_c, 4)}] [α {round(cell_α, 4)}] [β {round(cell_β, 4)}] [γ {round(cell_γ, 4)}] [volume {round(volume, 4)}]")
         
         days = "00"
-        if volume > volumeCap:
-            printToLog("# INFO - Compound [" + refcode + "] Volume greater than [5000], 2 extra days allocated.")
+        if volume > volume_cap:
+            printToLog(f"# INFO - Compound [{refcode}] Volume greater than [{volume_cap}], 2 extra days allocated.")
             days = "02"
         
-        printToLog("# INFO - Compound [" + refcode + "] Number of tasks per node set to ["+str(kPoints)+"]")
-        printToLog("# INFO - Compound [" + refcode + "] Memory request set to ["+str(dynamicalRAM)+"G]")
+        printToLog(f"# INFO - Compound [{refcode}] Number of tasks per node set to [{kPoints}]")
+        printToLog(f"# INFO - Compound [{refcode}] Memory request set to [{dynamicalRAM}G]")
 
         # Create the QE_SUB submission script
         with open(QE_SUB, "w") as file:
             content = f"""
 #!/bin/bash
     
-#SBATCH --job-name={refcode}_SUB
+#SBATCH --job-name={set_id}_{refcode}_SUB
 #SBATCH --mail-type={param_slurmVerbosity}
 #SBATCH --mail-user={param_email}
 #SBATCH --account={param_account}
@@ -240,40 +295,3 @@ srun --cpus-per-task=1 --ntasks=1 python3 {post}
     else:
         printToLog("# WARN - Compound [" + refcode + "] No test output found")
         quit()
-
-#Main
-log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
-
-refcodeDirectory = os.getcwd() #Directory where we are
-input_path = os.path.split(refcodeDirectory)[0]
-homeDirectory = os.path.split(input_path)[0]
-
-refcode = os.path.basename(refcodeDirectory)
-
-if len(sys.argv) > 1:
-    printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
-    
-#Make sure there is a directory to process
-cifs_path = os.path.join(homeDirectory, "cifs")
-createDirectory(cifs_path, "# WARN - No directory found for .cifs to process.", False)
-
-validated = os.path.join(cifs_path, "validated")
-createDirectory(validated, "# WARN - No directory found for .cifs to process. Place .cif files in or replace the newly created directory at ["+validated+"]", True)
-
-cif = os.path.join(validated, refcode+".cif")
-qe_in = os.path.join(refcodeDirectory, refcode+".in")
-gipaw_in = os.path.join(refcodeDirectory, f"gipaw.{refcode}.in")
-test_out = os.path.join(refcodeDirectory, f"test_{refcode}.out")
-
-QE_SUB = os.path.join(refcodeDirectory, "QE_SUB")    
-post = os.path.join(os.path.join(homeDirectory,"utils"), "post_processing.py")
-incomplete = os.path.join(refcodeDirectory, "INCOMPLETE.txt")
-
-
-
-
-if len(sys.argv) > 1:
-    prepare_test(sys.argv[1:])
-else:
-    process_test()
-
