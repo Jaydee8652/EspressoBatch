@@ -112,8 +112,7 @@ Creates the 'Sanity_Input_Files' directory and presents the user with 4 processe
 
  - 3:  Calculate relative energies for all outputs in kJ mol⁻¹ molecule⁻¹
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Should only be run after all calculations are complete. Determines the relative energy of all outputs in kJ mol⁻¹ molecule⁻¹.
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The lowest energy output is used to 'zero' all other energies. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Should only be run after all calculations are complete. The lowest energy output is used to 'zero' all other energies. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The energy of each refcode can then be inspected manually, structures with reasonable energies can be marked to be retained.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This is done by entering 'True' in the [validated] column for a given row in 'Sanity_Input_Files/sanity_sheet.csv'.
