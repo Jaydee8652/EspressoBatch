@@ -121,9 +121,9 @@ Automatcially logs which calculations have been batched in 'Sanity_Input_Files/s
 > Discarded structures are saved to 'cifs/high_energy' and a backup of 'cifs/validated' is created so that the test can be run again with different parameters if desired.
 
 
-## qe_cif2cell.py
+## cif2cell_control.py
 ```
-python3 qe_cif2cell.py
+python3 cif2cell_control.py
 ```
 Will generate quantum-espresso input files with calculation parameters defined in 'qe_params.csv' from .cifs in 'cifs/validated'. Automatically runs test calculations and creates slurm batch files based on the the projected resource use.
 
