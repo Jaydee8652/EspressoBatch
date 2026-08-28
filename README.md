@@ -132,51 +132,47 @@ On the first run this script will create 'qe_params.csv' with default settings. 
 | MAIN   | 10        | 55.0    | 8.0            | 1.D-6    | 0.01    | relax       | 0          | H                 |
 
 
- - set_id (default: MAIN)
- Human readable name for this "set". 
- Used as the name of the directory and will be appended to .cif refcodes in the slurm queue and output spreadsheet.
+ -  set_id (default: MAIN)
+> Human readable name for this "set". 
+> Used as the name of the directory and will be appended to .cif refcodes in the slurm queue and output spreadsheet.
 
  - test_time (default: 10)
-Time taken for a test calculation to complete (in seconds). 
-Used to estimate the amount of time creating a series of input files will take. Slightly varies with calculation difficulty.
+> Time taken for a test calculation to complete (in seconds). 
+> Used to estimate the amount of time creating a series of input files will take. Slightly varies with calculation difficulty.
 
- - ecutwfc (default: 55.0)
-*Default quantumespresso parameter
+ -  ecutwfc (default: 55.0)
+> *Default quantumespresso parameter
 
- - ecutrho_factor: (default: 8.0)
-Multiplier of ecutwfc to produce quantumespresso parameter ecutrho.
+ -  ecutrho_factor: (default: 8.0)
+> Multiplier of ecutwfc to produce quantumespresso parameter ecutrho.
 
- - conv_thr (default: 1.D-6)
-*Default quantumespresso parameter
+ -  conv_thr (default: 1.D-6)
+> *Default quantumespresso parameter
 
- - q_gipaw (default: 0.01)
-*Default quantumespresso parameter
+ -  q_gipaw (default: 0.01)
+> *Default quantumespresso parameter
 
- - calculation (default: relax)
-Type of calculation to perform, see quantumespresso manual. 
-Only relax is fully supported by post processing scripts.
+ -  calculation (default: relax)
+> Type of calculation to perform, see quantumespresso manual. 
+> Only relax is fully supported by post processing scripts.
 
- - volume_cap (default: 0)
-The minimum volume at which calculations should be given more time to process.
-Above this number, the time requested from slurm increased from 1 day to 3 days.
+ -  volume_cap (default: 0)
+> The minimum volume at which calculations should be given more time to process.
+> Above this number, the time requested from slurm increased from 1 day to 3 days.
 
- - atoms_to_optimise: (default: H)
-List of atom types to optimise, all other atom types will be frozen.
-Should be seperated by " " (ie: H C O N Co).
-Enter "None" to optimise no atom positions and "All" to optimise all atom positions.
+ -  atoms_to_optimise: (default: H)
+> List of atom types to optimise, all other atom types will be frozen.
+> Should be seperated by " " (ie: H C O N Co).
+> Enter "None" to optimise no atom positions and "All" to optimise all atom positions.
  
 
 Presents the user with 2 processes to run. Only one of these processes can be run at once, through an integer input.
 
- - 1:
-Run test calculations in a slurm job array
+ - 1:  Run test calculations in a slurm job array
+> Determines appropriate groupings of input files based on the time each test calculation will take and submits them to slurm. Empty directories will be created first, and the job array will populate them.
 
-Determines appropriate groupings of input files based on the time each test calculation will take and submits them to slurm. Empty directories will be created first, and the job array will populate them.
-
- - 2: 
-Run test calculations in current session
-
-Running test calculations in the current session is more brittle, as if the current session ends the process will stop. It is useful if only a few dozen input files are required as there is no wait for slurm resource allocation.
+ - 2:  Run test calculations in current session
+> Running test calculations in the current session is more brittle, as if the current session ends the process will stop. It is useful if only a few dozen input files are required as there is no wait for slurm resource allocation.
  
 
 
@@ -188,30 +184,21 @@ python3 batch_control.py
 ```
 Displays the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
 
- - 1:
-Append the refcode of all local input directories to a .csv stored locally / on github
+ - 1:  Append the refcode of all local input directories to a .csv stored locally / on github
+> Input directories are produced by qe_cif2cell.py
 
-Input directories are produced by qe_cif2cell.py
+ - 2:  Extract data from local summary files and update a .csv stored locally / on github
+> Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous batch to be processed when a new one is requested.
+> Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
 
- - 2: 
-Extract data from local summary files and update a .csv stored locally / on github
-Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous 
-batch to be processed when a new one is requested.
+ - 3:  References and updates a .csv stored locally / on github to submit requests to slurm.
+> Creates 'REFCODE_batch.txt' to store the time and location of the batch.
+> Will only run calculations not flagged as previously batched.
+> Batches [batchCount] every run to avoid requesting too many resources at once.
+> [batchCount] by default is the number of calculations that would lead to a slurm queue length of 16. 
+> Displays the final slurm queue once batching is complete
 
-Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
-
- - 3: 
-References and updates a .csv stored locally / on github to submit requests to slurm.
-Creates 'REFCODE_batch.txt' to store the time and location of the batch.
-Will only run calculations not flagged as previously batched.
-
-Batches [batchCount] every run to avoid requesting too many resources at once.
-[batchCount] by default is the number of calculations that would lead to a slurm queue length of 16. 
-
-Displays the final slurm queue once batching is complete
-
- - 0:
-"Speed dial" for all processes in sequence
+ - 0:  "Speed dial" for all processes in sequence
  
  
  It should be noted that if 2 and 3 attempt to modify a refcode not in the .csv they may crash.
