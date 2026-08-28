@@ -184,14 +184,11 @@ python3 batch_control.py
 ```
 Displays the current slurm queue, determines the number of previously batched calculations, and then presents the user with 3 processes to run. Any combination of these processes can be run through an integer input.
 
- - 1:  Append the refcode of all local input directories to a .csv stored locally / on github
-> Input directories are produced by qe_cif2cell.py
-
- - 2:  Extract data from local summary files and update a .csv stored locally / on github
+ - 1:  Extract data from local summary files and update a .csv stored locally / on github
 > Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous batch to be processed when a new one is requested.
 > Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
 
- - 3:  References and updates a .csv stored locally / on github to submit requests to slurm.
+ - 2:  References and updates a .csv stored locally / on github to submit requests to slurm.
 > Creates 'REFCODE_batch.txt' to store the time and location of the batch.
 > Will only run calculations not flagged as previously batched.
 > Batches [batchCount] every run to avoid requesting too many resources at once.
@@ -200,5 +197,3 @@ Displays the current slurm queue, determines the number of previously batched ca
 
  - 0:  "Speed dial" for all processes in sequence
  
- 
- It should be noted that if 2 and 3 attempt to modify a refcode not in the .csv they may crash.
