@@ -7,7 +7,7 @@ git clone https://github.com/Jaydee8652/EspressoBatch.git; cd EspressoBatch/; mo
 ```
 
 
-### Edit 'utils/params.py' 
+#### Edit 'utils/params.py' 
 
 
 ### User Specific Parameters
