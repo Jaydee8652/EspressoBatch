@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 ### User Specific Parameters
 
-- Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
+- Replace the value for "param_email" with an email you control. Slurm events will be forwarded to this email
 
 - Replace the value for "param_account" with your account on the cluster
 
