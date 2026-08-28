@@ -19,7 +19,7 @@ pip install -r requirements.txt
 Edit 'utils/params.py' 
 
 
-# User Specific Parameters
+### User Specific Parameters
 
 -Replace the value for "param_email" with the name of an email you control. Slurm events will be forwarded to this email.
 
@@ -27,7 +27,7 @@ Edit 'utils/params.py'
 
 -The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 
-# Cluster Specific Parameters
+### Cluster Specific Parameters
 
 -Replace the value for "param_location" with the human readable name of the cluster (ie "Rorqual")
 
