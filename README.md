@@ -53,11 +53,13 @@ To activate this feature, enter 'utils/params.py'
 
 
 -Replace the value for "param_repo" with the name of a github repository you control
+
 -Replace the value for "param_token" with an auth token that has read and write permissions on said repo
 
 In the repository:
 
 -Create a new .csv file called 'sheet.csv' in the home directory
+
 -Create a new .txt file called 'sheet_flag.txt' in the home directory, containing the string 'True'
 
 
