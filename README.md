@@ -27,7 +27,7 @@ Edit 'utils/params.py'
 
 -The value for "param_slurmVerbosity" can be any supported slurm --mail-type (https://slurm.schedmd.com/sbatch.html)
 
-### Cluster Specific Parameters
+### Cluster Specific Parameters (See node characteristics for your cluster: https://docs.alliancecan.ca/wiki/Rorqual/en)
 
 -Replace the value for "param_location" with the human readable name of the cluster (ie "Rorqual")
 
@@ -35,7 +35,6 @@ Edit 'utils/params.py'
 
 -Replace the value for "param_memory" with the available memory of each node in G
 
-(See node characteristics for your cluster: https://docs.alliancecan.ca/wiki/Rorqual/en)
 
 
 ### You can now run calculations!
