@@ -70,7 +70,8 @@ Intended to quickly filter a directory of .cif files by several characteristics 
 
 If the provided .cif files are from the Cambridge Structural Database, a .csv of additional characteristics can be obtained by saving a selection of structures as a TAB separated values table in Conquest. This can then be converted with excel or another .csv manager. This file can be provided at 'EspressoBatch/structure_data.csv' to allow for more robust filtering. Without a provided 'structure_data.csv', filtering settings that require it will be forcibly disabled if selected. 
 
-On the first run this script will create the 'original_cifs' directory. Place .cif files in 'original_cifs' and rerun, the user will then be presented with different filtering settings. Any combination of these filters can be run through an integer input. 
+On the first run this script will create the 'original_cifs' directory. Place .cif files in 'original_cifs' and rerun. 
+#### The user will then be presented with different filtering settings. Any combination of these filters can be run through an integer input. 
 
  - 1:  Discard structures with r factor greater than [{rCap} default: 10] (This data is stored in 'structure_data.csv')
  - 2:  Discard structures flagged as disordered by their CSD author (This data is stored in 'structure_data.csv')
