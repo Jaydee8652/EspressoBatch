@@ -37,8 +37,7 @@ Edit 'utils/params.py'
 
 -Replace the value for "param_memory" with the available memory of each node in G
 
-(See node characteristics for your cluster: https://docs.alliancecan.ca/wiki/Rorqual/en)
-
+(See node characteristics for your cluster: https://docs.alliancecan.ca/wiki/)
 
 ### You can now run calculations!
 It should be noted that the scipy-stack must to be reloaded every time you connect to the cluster. Creating an alias to do this automatically is recommended.
