@@ -1,18 +1,9 @@
 Designed for use on Digital Research Alliance of Canada clusters.
 
 # To activate:
-Run the following commands:
+Run the following command:
 ```
-git clone https://github.com/Jaydee8652/EspressoBatch.git
-```
-```
-cd EspressoBatch/
-```
-```
-module load scipy-stack/2023b
-```
-```
-pip install -r requirements.txt
+git clone https://github.com/Jaydee8652/EspressoBatch.git; cd EspressoBatch/; module load scipy-stack/2023b; pip install -r requirements.txt
 ```
 
 
