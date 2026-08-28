@@ -93,7 +93,8 @@ This script is intended for use in crystal structure prediction, allowing the en
 
 Not considered necessary for .cifs obtained from the Cambridge Structural Database, all CSD structures will likely have reasonable energies. 
 
-Creates the 'Sanity_Input_Files' directory and presents the user with 4 processes to run. Any of these processes can be run with an integer input, but they should ideally be performed in order.
+Creates the 'Sanity_Input_Files' directory.
+#### Presents the user with 4 processes to run. Any of these processes can be run with an integer input, but they should ideally be performed in order.
 
  - 1:  Generates quantum-espresso sfc input files from .cifs in 'cifs/validated' to perform a "sanity check".
 
@@ -166,7 +167,7 @@ On the first run this script will create 'qe_params.csv' with default settings. 
 > Enter "None" to optimise no atom positions and "All" to optimise all atom positions.
  
 
-Presents the user with 2 processes to run. Only one of these processes can be run at once, through an integer input.
+#### Presents the user with 2 processes to run. Only one of these processes can be run at once, through an integer input.
 
  - 1:  Run test calculations in a slurm job array
 > Determines appropriate groupings of input files based on the time each test calculation will take and submits them to slurm. Empty directories will be created first, and the job array will populate them.
