@@ -184,7 +184,7 @@ On the first run this script will create '_qe_params.csv' with default settings.
 ```
 python3 batch_control.py
 ```
-Displays the current slurm queue, determines the number of previously batched calculations. and 
+Displays the current slurm queue, determines the number of previously batched calculations. 
 
 #### Presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
 
@@ -198,6 +198,31 @@ Displays the current slurm queue, determines the number of previously batched ca
 > Batches [batchCount] every run to avoid requesting too many resources at once.
 > [batchCount] by default is the number of calculations that would lead to a slurm queue length of 16. 
 > Displays the final slurm queue once batching is complete
+
+ - 0:  "Speed dial" for all processes in sequence
+
+
+
+
+ ## extract_features.py
+```
+python3 extract_features.py
+```
+Extracts features from mol2 files.
+
+#### Presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
+
+ - 1:  Extract feature data from calculations
+> Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous batch to be processed when a new one is requested.
+> Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
+
+ - 2:  Extract feature data from experimental
+> Creates .mol2 files from .cif files provided in the 'experimental' directory through openbabel.
+> .mol2 will include explicit bonding relationships between all bonded atoms.
+> Attempts to fix broken organometallic bonds not properly created by openbabel.
+> Appends numerical id to each atom corresponding to order in the original .cif to allow for correlation atoms after conversion.
+> Extracts features from produced .mol2 files and saves them to '_experimental_feature_data.csv'
+> Sigma values must be input into this .csv manually if using them as features is desired.
 
  - 0:  "Speed dial" for all processes in sequence
  
