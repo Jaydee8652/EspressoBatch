@@ -222,9 +222,9 @@ Extracts features from .mol2 files. Each unique tungsten site is extracted as a 
 
 
  - 2:  Extract feature data from experimental
-> Creates .mol2 files from .cif files provided in the 'experimental' directory through openbabel.
+> Creates .mol2 files from .cif files provided in the 'experimental' directory with openbabel.
 > Attempts to fix organometallic bonds not properly created by openbabel.
-> Appends numerical id to each atom corresponding to order in the original .cif, allows for correlation atoms after conversion.
+> Appends numerical id to each atom corresponding to order in the original .cif, allows for correlation of atoms after conversion.
 > Extracts features from produced .mol2 files and saves them to '_experimental_feature_data.csv'
 > Sigma values must be input into this .csv manually if using them as features is desired.
 
