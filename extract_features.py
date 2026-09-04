@@ -53,22 +53,24 @@ printToLog("# INFO - Enter integer(s) with spaces between entries ('1 2') to cho
 options = {
     "1": "Extract feature data from calculations",
     "2": "Extract feature data from experimental",
+    "0": "All in sequence",
 }
 
 for key, value in options.items():
     printToLog(f"# INFO -    [{key}] {value}")
 if len(sys.argv) > 1:
-    choices = ' '.join(sys.argv[1:])
+    choices = ' '.join(sys.argv[1:]) # Can take command line inputs ie "python3 extract_features.py 0"
 else:
     choices = input(">")
- 
+
 invalidInputs = []
 regex = re.compile('[^0-9 ]')
-choices = list(set(regex.sub('', choices).strip().split(" ")))
-if len(choices) > 1:
-    printToLog("# WARN - Only one process can be run at a time")
-    quit()
+choices = regex.sub('', choices).strip().split(" ")
+if choices.__contains__("0"):
+    choices = list(options)
+    choices.remove("0")
     
+choices = list(set(choices))
 for choice in choices:    
     if not options.__contains__(choice):
         invalidInputs.append(choice)

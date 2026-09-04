@@ -102,7 +102,7 @@ with open(prediction_data, 'a') as file:
     print(','.join(y['REFCODE'].tolist()),file=file)
     
     for pkl in pkls:
-        printToLog(f"# Info - Predicting with model [{pkl}]")
+        printToLog(f"# INFO - Predicting with model [{pkl}]")
         with open(os.path.join(pkl_directory, pkl), 'rb') as mod:
             regressor = joblib.load(mod)
             print(','.join(map(str, regressor.predict(X).tolist())),file=file)
@@ -123,7 +123,9 @@ for refcode, series in df.items():
     
     plt.savefig(os.path.join(output, f"{refcode}.png"),bbox_inches='tight')
 
+printToLog(f"# INFO - Appending mean predicted values to [{prediction_data}]")
 df = pd.read_csv(prediction_data)
 df = pd.concat([df, df.mean().to_frame().T])
 df.to_csv(prediction_data, index=False)
+
 printToLog(f"# INFO - Process complete")
