@@ -127,7 +127,7 @@ python3 cif2cell_control.py
 ```
 Will generate quantum-espresso input files with calculation parameters defined in '_qe_params.csv' from .cifs in 'cifs/validated'. Automatically runs test calculations and creates slurm batch files based on the the projected resource use.
 
-On the first run this script will create '_qe_params.csv' with default settings. Adding new rows to '_qe_params.csv' will create multiple sets of calculations, each set will be given its own directory. Input files will be created for all sets with that sets defined parameters.
+On the first run this script will create '_qe_params.csv' with default settings. Adding new rows to '_qe_params.csv' will create multiple sets of calculations, each set will be given its own directory. Input files will be created for all sets with that set's defined parameters.
 
 | set_id | test_time | ecutwfc | ecutrho_factor | conv_thr | q_gipaw | calculation | volume_cap | atoms_to_optimise |
 | ------ | --------- | ------- | -------------- | -------- | ------- | ----------- | ---------- | ----------------- |
