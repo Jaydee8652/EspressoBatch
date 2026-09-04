@@ -270,3 +270,7 @@ Parameters of the model can be altered in 'utils/train_model.py' by changing the
 > Should the model be trained on shielding eigenvalues rather than shielding values. Plotting of data is not supported.
 
 
+Plots feature correlation, feature importance with errorbars and actual vs predicted values. 
+Plots the mean squared error of all seeds,
+
+
