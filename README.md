@@ -263,7 +263,7 @@ Parameters of the model can be altered in 'utils/train_model.py' by changing the
  -  datapoint_cap (default: 10000)
 > Cap on number of datapoints used by the model, includes train and test.
 
- -  consider ()
+ -  consider (default: ["W Distortion zeta","W Distortion delta","W Distortion sigma","W Distortion theta","P Distortion zeta","P Distortion delta","P Distortion sigma","P bonds","P-W dist","?1 atomic number","?1 bonds","W-P-?1 angle","P-?1 dist","?2 atomic number","?2 bonds","W-P-?2 angle","P-?2 dist","?3 atomic number","?3 bonds","W-P-?3 angle","P-?3 dist"]])
 > List of features the model should use. A list of all extracted features can be found at 'utils/data/feature_names.csv'.
 
 - multiregressor (default: False)
