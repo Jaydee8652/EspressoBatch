@@ -64,7 +64,7 @@ else:
     printToLog("# INFO - " + str(len(cifs)) + " .cif files found at ["+ validated + "]")
 
 #Make sure there is a .csv to read from
-qe_params = os.path.join(homeDirectory, "qe_params.csv")
+qe_params = os.path.join(homeDirectory, "_qe_params.csv")
 if not os.path.isfile(qe_params):
     with open(qe_params, 'a') as file:
         print("set_id,test_time,ecutwfc,ecutrho_factor,conv_thr,q_gipaw,calculation,volume_cap,atoms_to_optimise",file=file)

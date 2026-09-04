@@ -25,7 +25,7 @@ def removeDirectory(path, text):
 log = str(os.path.basename(sys.argv[0]).split(".")[0]+".log")
 homeDirectory = os.getcwd()#Directory where we are
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
-qe_params = os.path.join(homeDirectory, "qe_params.csv")
+qe_params = os.path.join(homeDirectory, "_qe_params.csv")
 
 if not os.path.isfile(qe_params):
     printToLog(log,"# WARN - No qe_params.csv found.")
@@ -78,11 +78,3 @@ for refcode in cifs:
                     sigma_diff = abs(main_sigma - comp_sigma)
                     if sigma_diff > tolerance:
                         printToLog(f"# WARN - Compound [{refcode}] has equivalent atoms [{atom_id}] with sigma values [{main_set_id} ({main_sigma}) {comp_set_id} ({comp_sigma})] outside tolerance [{sigma_diff}]")
-                    
-
-                
-                #data[f"W sigma"] = atom.split("(")[1].split(")")[0]
-                #data[f"W sigma_33"] = atom.split("[XYZ ")[1].split("]")[0].split()
-                #data[f"W sigma_11"] = atom.split("[sigma_11 ")[1].split("]")[0]
-                #data[f"W sigma_22"] = atom.split("[sigma_22 ")[1].split("]")[0]
-                #data[f"W sigma_33"] = atom.split("[sigma_33 ")[1].split("]")[0]

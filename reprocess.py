@@ -34,7 +34,7 @@ homeDirectory = os.getcwd()#Directory where we are
 printToLog(" --- \n"+str(datetime.datetime.now().strftime("[%H:%M:%S] "))+"# INFO - Starting new "+str(os.path.basename(sys.argv[0]).split(".")[0])+" process in ["+ homeDirectory + "]")    
 
 #Make sure there is a .csv to read from
-qe_params = os.path.join(homeDirectory, "qe_params.csv")
+qe_params = os.path.join(homeDirectory, "_qe_params.csv")
 if not os.path.isfile(qe_params):
     printToLog("# WARN - No qe_params.csv found.")
     quit()
