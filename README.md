@@ -269,8 +269,15 @@ Parameters of the model can be altered in 'utils/train_model.py' by changing the
 - multiregressor (default: False)
 > Should the model be trained on shielding eigenvalues rather than shielding values. Plotting of data is not supported.
 
-
 Plots feature correlation, feature importance with errorbars and actual vs predicted values. 
-Plots the mean squared error of all seeds,
+Plots the mean squared error of all seeds.
+Saves model information as .pkl files.
 
+ ## use_model.py
+```
+python3 use_model.py
+```
+#### Asks the user for a string input as the name of the model
 
+Uses the .pkl in yje specified model to predict targets for features in '_experimental_feature_data.csv', saved to 'experimental/model_name'
+Histogram plotted for each feature set with predicted values from all seeds. 
