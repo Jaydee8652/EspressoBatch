@@ -16,9 +16,13 @@ import re
 import math
 import datetime
 import time
-from generic_utils import printToLog as pl, createDirectory as cd, cellVolume
-from params import *
 import pandas as pd
+
+#Jank thing to fix the path. Very annoying artefact of running python scripts by absolute path.
+sys.path[0] = sys.path[0][:-6] + sys.path[0][-6:].replace("/utils", "")
+
+from utils.generic_utils import printToLog as pl, createDirectory as cd, cellVolume
+from utils.params import *
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like

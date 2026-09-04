@@ -11,13 +11,18 @@ import csv
 import datetime
 import time
 import sys
+
+
+#Jank thing to fix the path. Very annoying artefact of running python scripts by absolute path.
+sys.path[0] = sys.path[0][:-6] + sys.path[0][-6:].replace("/utils", "")
+
 from utils.generic_utils import *
 from utils.params import *
 
 #Main
 homeDirectory = os.getcwd() # Directory where we are
 
-qe_params = os.path.join(homeDirectory, "qe_params.csv")
+qe_params = os.path.join(homeDirectory, "_qe_params.csv")
 localSheet = os.path.join(homeDirectory, param_sheetPath)
 localFlag = os.path.join(homeDirectory, param_flagPath)
 

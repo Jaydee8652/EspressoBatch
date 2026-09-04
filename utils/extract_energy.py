@@ -8,7 +8,11 @@ import io
 import csv
 import datetime
 import time          
-from generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, writeCSV
+
+#Jank thing to fix the path. Very annoying artefact of running python scripts by absolute path.
+sys.path[0] = sys.path[0][:-6] + sys.path[0][-6:].replace("/utils", "")
+
+from utils.generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, writeCSV
 
 #Functions
 def printToLog(info):#Prints and logs in one, convention I personally like

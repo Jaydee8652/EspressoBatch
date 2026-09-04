@@ -20,9 +20,13 @@ import time
 import subprocess
 import numpy as np
 
-from generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, writeCSV, isQueued, parseAlat, cellVolume
-from params import *
+#Jank thing to fix the path. Very annoying artefact of running python scripts by absolute path.
+sys.path[0] = sys.path[0][:-6] + sys.path[0][-6:].replace("/utils", "")
 
+from utils.generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, writeCSV, isQueued, parseAlat, cellVolume, mol2Creator
+from utils.params import *
+#from generic_utils import printToLog as pl, createDirectory as cd, removeDirectory as rd, writeCSV, isQueued, parseAlat, cellVolume, mol2Creator
+#from utils.params import *
 
 #Params - can be modified
 tolerance = 0.01
@@ -34,85 +38,6 @@ def createDirectory(path, text, exit):
     cd(log, path, text, exit)
 def removeDirectory(path, text):
     rd(log, path, text)
-
-def populate_mol(path, lines, seed=1):           
-    with open(path, "w") as file:                        
-        for number, line in enumerate(''.join(lines).split("\n@<TRIPOS>ATOM")[0].split("\n"), 0):
-            print(line.rstrip(), file=file)
-
-        if seed == 1:
-            append_atom(seed)
-        else:   
-            for atom_number, atom_line in enumerate(seed, 1):
-                if not new_atoms.__contains__(atom_line):
-                    append_atom(atom_number)
-                else:
-                    printToLog("# INFO - Compound ["+refcode+"] Atom already selected ["+str(atoms[atom_number].rstrip())+"]")
-
-        printToLog(f"# INFO - Compound [{refcode}] Populating single cell .mol2" if not seed == 1 else f"# INFO - Compound [{refcode}] Populating single molecule .mol2")
-        id_map = {}
-        
-        print("@<TRIPOS>ATOM", file=file)
-        for atom_number, new_atom in enumerate(new_atoms, 1):
-            new_id = str('{: >6}'.format(atom_number))
-            old_id = str(new_atom[1:7])
-
-            id_map[old_id] = new_id
-            temp = " " + str(new_id) + new_atom.rstrip()[7:]
-            print(temp, file=file)
-            
-        print("@<TRIPOS>BOND", file=file)
-        for bond_number, new_bond in enumerate(new_bonds, 1):
-            first_id = str(new_bond[6:12])                                        
-            second_id = str(new_bond[12:18])       
-            
-            new_id = str('{: >6}'.format(bond_number))
-            temp = new_id + id_map[first_id] + id_map[second_id] + new_bond[18:].rstrip()
-            print(temp, file=file)
-
-        printToLog("# INFO - Compound ["+ refcode +"] Contains ["+str(len(new_atoms))+"] atoms and ["+str(len(new_bonds))+"] bonds")
-        if (len(new_bonds) / len(new_atoms)) < 0.8:
-            printToLog("# WARN - Compound ["+ refcode +"] Has unusually low bond density")
-            
-    with open(path) as file:
-        lines = file.readlines()
-    with open(path, "w") as file:
-        for number, line in enumerate(lines, 1):
-            if number == 3: #MAYBE BETTER ANSWER FOR THIS?
-                temp = line.strip().lstrip().split()                                        
-                print(" "+str(len(new_atoms))+" "+str(len(new_bonds)) +" "+str(temp[2])+" "+str(temp[3])+" "+str(temp[4]), file=file)
-            else:
-                print(line.rstrip(), file=file)
-
-def append_atom(atom_number):
-    atom_id = str('{: >6}'.format(atom_number))
-    
-    printToLog("# INFO - Compound ["+refcode+"] Atom appended ["+str(atoms[int(atom_number)-1].rstrip())+"]")
-    new_atoms.append(atoms[int(atom_number)-1])
-        
-    for bond_number, bond_line in enumerate(bonds, 1):
-        first_id = str(bond_line[6:12])                                        
-        second_id = str(bond_line[12:18])
-
-        if atom_id == first_id:
-            if not new_bonds.__contains__(bond_line):
-                new_bonds.append(bond_line)
-
-            second_id = int(second_id.lstrip())
-            if not new_atoms.__contains__(atoms[second_id-1]):
-                append_atom(second_id)
-            else:
-                printToLog("# INFO - Compound ["+refcode+"] Atom already selected ["+str(atoms[second_id-1].rstrip())+"]")
-
-        if atom_id == second_id:
-            if not new_bonds.__contains__(bond_line):
-                new_bonds.append(bond_line)
-
-            first_id = int(first_id.lstrip())
-            if not new_atoms.__contains__(atoms[first_id-1]):
-                append_atom(first_id)
-            else:
-                printToLog("# INFO - Compound ["+refcode+"] Atom already selected ["+str(atoms[first_id-1].rstrip())+"]")
 
 CIF_symmetryElements = []
 
@@ -168,7 +93,6 @@ df = pd.read_csv(local_params, encoding="utf-8-sig")
 set_id = str(df['set_id'].iloc[0])
 
 utils = os.path.join(homeDirectory,"utils")
-
 atom_data = os.path.join(os.path.join(utils, "data"), "atom_data.csv")
 if os.path.exists(atom_data):
     df = pd.read_csv(atom_data, encoding="utf-8-sig")
@@ -597,224 +521,65 @@ with open(summaryPath, "a") as summary:
         print("# WARN - No gipaw .out file found for compound with refcode ["+refcode+"]", file=summary)
         printToLog("# WARN - Compound ["+refcode+"] No GIPAW .out file found")
         quit()
-            
-    single_cell_count = 0
-    with open(opt_cif, "w") as opt:
-        with open(cif) as file:
-            lines = file.readlines()
-            
-            printToLog("# INFO - Compound ["+refcode+"] Populating optimised .cif file")
-            print("data_"+refcode+"_OPT", file=opt)
 
-
-            cell_params = {}
-            reduced_cell_params = {}
-            print("\n# -CIF params-\n", file=summary)
-
-            for number, line in enumerate(lines, 0):   
-                if "_chemical_formula_sum" in line:
-                    print(line.strip(), file=opt)
-                elif "_cell_length_a" in line:
-                    cell_params["a"] = float(lines[number].split()[1].split("(")[0])
-                    cell_params["b"] = float(lines[number+1].split()[1].split("(")[0])
-                    cell_params["c"] = float(lines[number+2].split()[1].split("(")[0])
-                    cell_params["α"] = float(lines[number+3].split()[1].split("(")[0])
-                    cell_params["β"] = float(lines[number+4].split()[1].split("(")[0])
-                    cell_params["γ"] = float(lines[number+5].split()[1].split("(")[0])
-                    cell_params["volume"] = float(cellVolume(cell_params["a"], cell_params["b"], cell_params["c"], math.radians(cell_params["α"]), math.radians(cell_params["β"]), math.radians(cell_params["γ"])))
+    printToLog("# INFO - Compound ["+refcode+"] Processing .cif file")
+    with open(cif) as file:
+        lines = file.readlines()
         
-                    for key, value in cell_params.items():
-                        cell_params[key] = round(value,4)
-                    print("CIF_cell = ["+str(cell_params)+"]", file=summary)  
+        cell_params = {}
+        reduced_cell_params = {}
+        print("\n# -CIF params-\n", file=summary)
 
-            temp = parseAlat(Alat, vector1, vector2, vector3)
-            temp.append(float(cellVolume(float(temp[0]), float(temp[1]), float(temp[2]), math.radians(float(temp[3])), math.radians(float(temp[4])), math.radians(float(temp[5])))))
-            temp = [str(round(float(elem), 4)) for elem in temp]
-            
-            reduced_cell_params["a"] = temp[0]
-            reduced_cell_params["b"] = temp[1]
-            reduced_cell_params["c"] = temp[2]
-            reduced_cell_params["α"] = temp[3]
-            reduced_cell_params["β"] = temp[4]
-            reduced_cell_params["γ"] = temp[5]
-            reduced_cell_params["volume"] = temp[6]
-            print("CIF_reduced_cell = ["+str(reduced_cell_params)+"]", file=summary)  
-            
-            print("_cell_length_a " + reduced_cell_params["a"],file=opt)
-            print("_cell_length_b " + reduced_cell_params["b"],file=opt)
-            print("_cell_length_c " + reduced_cell_params["c"],file=opt)
-            print("_cell_angle_alpha " + reduced_cell_params["α"],file=opt)
-            print("_cell_angle_beta " + reduced_cell_params["β"],file=opt)
-            print("_cell_angle_gamma " + reduced_cell_params["γ"],file=opt)
-            
-            print("_space_group_name_H-M_alt 'P 1'", file=opt)
-            print("_space_group_IT_number 1", file=opt)
-            print("loop_", file=opt)
-            print("_space_group_symop_operation_xyz", file=opt)
-            print("'x, y, z'", file=opt)
+        for number, line in enumerate(lines, 0):
+            if "_cell_length_a" in line:
+                cell_params["a"] = float(lines[number].split()[1].split("(")[0])
+                cell_params["b"] = float(lines[number+1].split()[1].split("(")[0])
+                cell_params["c"] = float(lines[number+2].split()[1].split("(")[0])
+                cell_params["α"] = float(lines[number+3].split()[1].split("(")[0])
+                cell_params["β"] = float(lines[number+4].split()[1].split("(")[0])
+                cell_params["γ"] = float(lines[number+5].split()[1].split("(")[0])
+                cell_params["volume"] = float(cellVolume(cell_params["a"], cell_params["b"], cell_params["c"], math.radians(cell_params["α"]), math.radians(cell_params["β"]), math.radians(cell_params["γ"])))
+    
+                for key, value in cell_params.items():
+                    cell_params[key] = round(value,4)
+                print("CIF_cell = ["+str(cell_params)+"]", file=summary)  
+                printToLog("# INFO - Compound ["+refcode+"] Cell params ["+str(cell_params)+"]")
 
-            print("loop_", file=opt)
-            print("_atom_site_label", file=opt)
-            print("_atom_site_type_symbol", file=opt)
-            print("_atom_site_fract_x", file=opt)
-            print("_atom_site_fract_y", file=opt)
-            print("_atom_site_fract_z", file=opt)
+        temp = parseAlat(Alat, vector1, vector2, vector3)
+        temp.append(float(cellVolume(float(temp[0]), float(temp[1]), float(temp[2]), math.radians(float(temp[3])), math.radians(float(temp[4])), math.radians(float(temp[5])))))
+        temp = [str(round(float(elem), 4)) for elem in temp]
+        
+        reduced_cell_params["a"] = temp[0]
+        reduced_cell_params["b"] = temp[1]
+        reduced_cell_params["c"] = temp[2]
+        reduced_cell_params["α"] = temp[3]
+        reduced_cell_params["β"] = temp[4]
+        reduced_cell_params["γ"] = temp[5]
+        reduced_cell_params["volume"] = temp[6]
+        print("CIF_reduced_cell = ["+str(reduced_cell_params)+"]", file=summary)  
+        printToLog("# INFO - Compound ["+refcode+"] Reduced cell params ["+str(reduced_cell_params)+"]")
 
-            start = 0
-            end = 0
-            
-            printToLog("# INFO - Compound ["+refcode+"] Processing .out file")
-            with open(out) as file:                
-                lines = file.readlines()
-                for number, line in enumerate(lines, 1):      
-                    if "Begin final coordinates" in line:
-                        start = number + 2                    
-                    elif "End final coordinates" in line:
-                        end = number - 1
+    printToLog("# INFO - Compound ["+refcode+"] Processing .out file")
+    with open(out) as file:                
+        lines = file.readlines()
+        for number, line in enumerate(lines, 1):      
+            if "Begin final coordinates" in line:
+                start = number + 2                    
+            elif "End final coordinates" in line:
+                end = number - 1
+        if len(lines[start:end]) == 0:
+            printToLog("# WARN - Compound ["+refcode+"] Does not have final coordinates")
+            quit()
 
-                single_cell_count = len(lines[start:end])
-                if single_cell_count == 0:
-                    printToLog("# WARN - Compound ["+refcode+"] Does not have final coordinates")
-                    quit()
-                
-                counts = {}
-
-                arrays = []
-                arrays.append([0, 0, 0])
-
-                arrays.append([1, 1, 1])
-                arrays.append([1, 1, 0])
-                arrays.append([1, 1, -1])
-                arrays.append([1, 0, 1])
-                arrays.append([1, 0, 0])
-                arrays.append([1, 0, -1])
-                arrays.append([1, -1, 1])
-                arrays.append([1, -1, 0])
-                arrays.append([1, -1, -1])
-                arrays.append([0, 1, 1])
-                arrays.append([0, 1, 0])
-                arrays.append([0, 1, -1])
-                arrays.append([0, 0, 1])
-               #arrays.append([0, 0, 0])
-                arrays.append([0, 0, -1])
-                arrays.append([0, -1, 1])
-                arrays.append([0, -1, 0])
-                arrays.append([0, -1, -1])
-                arrays.append([-1, 1, 1])
-                arrays.append([-1, 1, 0])
-                arrays.append([-1, 1, -1])
-                arrays.append([-1, 0, 1])
-                arrays.append([-1, 0, 0])
-                arrays.append([-1, 0, -1])
-                arrays.append([-1, -1, 1])
-                arrays.append([-1, -1, 0])
-                arrays.append([-1, -1, -1])
-
-                print("#ATOMS_START", file=opt)
-                for array in arrays:
-                    print("#START"+str(array), file=opt)
-                    for number, line in enumerate(lines[start:end], 0):
-                        curr = re.sub('\s{2,}', ' ', line).split()
-                        element = curr[0].lower().capitalize()
-
-                        if not counts.__contains__(element):
-                            counts[element] = 0
-                        counts[element] += 1
-                        new = element + str(counts[element]) + " " + element + " " + str(float(curr[1])+array[0]) + " " + str(float(curr[2])+array[1]) + " " + str(float(curr[3])+array[2])
-                        print(new, file=opt)
-                    print("#END"+str(array), file=opt)                        
-                print("#ATOMS_END", file=opt)
-                printToLog("# INFO - Compound ["+refcode+"] Created _super.cif")
-    try:
-        subprocess.call(f"module load {param_modules}; cd {refcodeDirectory}; obabel -i cif {refcode}_opt.cif -o mol2 -O {refcode}_super.mol2",shell=True)
-        printToLog("# INFO - Compound ["+refcode+"] Created _super.mol2")
-
-        if os.path.isfile(super_mol2):
-            with open(super_mol2, "r") as opt:
-                lines = opt.readlines()
-            atoms_positions = ''.join(lines).split('@<TRIPOS>ATOM')[1].split('@<TRIPOS>BOND')[0]
-
-            count = 0
-            with open(super_mol2, "w") as file:
-                for line in lines:
-                    line = line.rstrip("\n")
-                    if line in atoms_positions and not line == "":
-                        count += 1
-                        if count > single_cell_count:
-                            count = 1
-                        line += f" #[{count}]"
-                    print(line, file=file)
-
-
-            with open(super_mol2) as file:
-                lines = file.readlines()
-            with open(super_mol2, "a") as file:
-                atoms = ''.join(lines).split('@<TRIPOS>ATOM\n')[1].split('\n@<TRIPOS>BOND')[0].split("\n")
-                bonds = ''.join(lines).split('@<TRIPOS>BOND\n')[1].split("\n")
-
-                bond_count = len(bonds)
-                printToLog("# INFO - Compound ["+refcode+"] Attempting to find metallic bonds")
-                for metal_number, metal_line in enumerate(atoms, 1):
-                    metal_curr = re.sub('\s{2,}', ' ', metal_line).split()
-                    metal = metal_curr[1].lower().capitalize()
-
-                    if str(df.at[metal, "Metal"]) == "True":
-                        metal_array = np.array([float(metal_curr[2]), float(metal_curr[3]), float(metal_curr[4])])
-                        for other_number, other_line in enumerate(atoms, 1):
-                            other_curr = re.sub('\s{2,}', ' ', other_line).split()
-                            other = other_curr[1].lower().capitalize()
-                            
-                            if not other == "H" and not metal_number == other_number: 
-                                other_array = np.array([float(other_curr[2]), float(other_curr[3]), float(other_curr[4])])
-                                cutoff = float(df.at[metal, "RCov"]) + float(df.at[other, "RCov"]) + 0.45
-                                distance = np.sqrt(np.sum((metal_array-other_array)**2, axis=0))
-                                if distance < cutoff:
-                                    metal_id = str('{: >6}'.format(metal_number))
-                                    other_id = str('{: >6}'.format(other_number))
-
-                                    bond_exists = False
-                                    for bond_number, bond_line in enumerate(bonds, 1):
-                                        existing_ids = str(bond_line[6:18])
-                                        if existing_ids == metal_id+other_id or existing_ids == other_id+metal_id:
-                                            bond_exists = True
-                                    if not bond_exists:
-                                        bond_count += 1
-
-                                        printToLog("# INFO - Compound ["+refcode+"] Adding bond ["+ str('{: >6}'.format(metal_number))+" "+ str(metal)+" - "+ str('{: >6}'.format(other_number))+" "+ str(other)+ " "+str(round(cutoff,3))+" "+ str(round(distance,3))+"]")
-                                        
-                                        bond = str('{: >6}'.format(bond_count)) + str('{: >6}'.format(metal_number)) + str('{: >6}'.format(other_number)) + "    1"
-                                        print(bond, file=file)
-                                        bonds.append(bond)
-                                    else:
-                                        printToLog("# INFO - Compound ["+refcode+"] Bond already present ["+ str('{: >6}'.format(metal_number))+" "+ str(metal)+" - "+ str('{: >6}'.format(other_number))+" "+ str(other)+ " "+str(round(cutoff,3))+" "+ str(round(distance,3))+"]")
-
-            printToLog("# INFO - Compound ["+refcode+"] Added ["+str(bond_count - len(bonds))+"] missing metallic bonds")
-            printToLog("# INFO - Compound ["+refcode+"] Exploring bonding networks")
-
-            with open(super_mol2) as file:
-                lines = file.readlines()
-                atoms = ''.join(lines).split('@<TRIPOS>ATOM\n')[1].split('\n@<TRIPOS>BOND')[0].split("\n")
-                bonds = ''.join(lines).split('@<TRIPOS>BOND\n')[1].split("\n")
-
-                new_atoms = []
-                new_bonds = []
-                populate_mol(molecule_mol2, lines)
-                
-                new_atoms.clear()
-                new_bonds.clear()
-                populate_mol(cell_mol2, lines, ''.join(lines).split('@<TRIPOS>ATOM\n')[1].split("\n")[:single_cell_count])
-        else:
-            printToLog("# WARN - Compound ["+refcode+"] .mol2 output not found")
-    except subprocess.CalledProcessError as e:
-        printToLog("# WARN - Compound ["+refcode+"] Error creating _super.mol2")
-        printToLog(str(e))   
-
+    creator = mol2Creator(log=log,directory=refcodeDirectory,refcode=refcode,cell_params=reduced_cell_params,atom_positions=lines[start:end],df=df)
+    creator.create()
+    
     if os.path.isfile(gipawOut) and os.path.isfile(pwscfOut):
         if not PWSCF_numberMPI == GIPAW_numberMPI:
             printToLog("# WARN - Compound ["+refcode+"] Number of MPI do not match between PWSCF and GIPAW outputs")
         if not PWSCF_numberThreads == GIPAW_numberThreads:
             printToLog("# WARN - Compound ["+refcode+"] Number of threads does not match between PWSCF and GIPAW outputs")
-            
+
 shutil.copyfile(summaryPath, summaryCopyPath)
 printToLog("# INFO - Compound ["+ refcode +"] Copied summary file ["+ summaryCopyPath + "]")
 
