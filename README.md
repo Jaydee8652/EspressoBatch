@@ -204,6 +204,8 @@ Displays the current slurm queue, determines the number of previously batched ca
 
 
 
+### Tungsten pentacarbonyl(phosphorous) specifc
+
  ## extract_features.py
 ```
 python3 extract_features.py
@@ -213,8 +215,9 @@ Extracts features from mol2 files.
 #### Presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
 
  - 1:  Extract feature data from calculations
-> Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous batch to be processed when a new one is requested.
-> Summary files are produced at the end of an sbatch calculation by 'post_processing.py'
+> Extracts features from .mol2 and summary files from a specified set of calculations and saves them to '_experimental_feature_data.csv'
+> Default set is 'MAIN', can be altered by changing 'set_id' in 'extract_features.py'
+
 
  - 2:  Extract feature data from experimental
 > Creates .mol2 files from .cif files provided in the 'experimental' directory through openbabel.
@@ -224,4 +227,6 @@ Extracts features from mol2 files.
 > Sigma values must be input into this .csv manually if using them as features is desired.
 
  - 0:  "Speed dial" for all processes in sequence
+
+A list of all extracted features can be found at 'utils/data/feature_names.csv'. C5 is defined as the C within 
  
