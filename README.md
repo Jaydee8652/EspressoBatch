@@ -184,7 +184,9 @@ On the first run this script will create 'qe_params.csv' with default settings. 
 ```
 python3 batch_control.py
 ```
-Displays the current slurm queue, determines the number of previously batched calculations, and then presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
+Displays the current slurm queue, determines the number of previously batched calculations. and 
+
+#### Presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
 
  - 1:  Extract data from local summary files and update a .csv stored locally / on github
 > Intended to be run after a series of calculations have finished, inclusion in the workflow here allows the previous batch to be processed when a new one is requested.
