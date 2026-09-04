@@ -204,13 +204,15 @@ Displays the current slurm queue, determines the number of previously batched ca
 
 
 
-### Tungsten pentacarbonyl(phosphorous) specifc
+# Tungsten pentacarbonyl(phosphorous) specifc
+
+The following scripts allpw for machine learning analysis of tungsten pentacarbonyl(phosphorous) compounds. They will not work correctly on compounds without the motif
 
  ## extract_features.py
 ```
 python3 extract_features.py
 ```
-Extracts features from mol2 files.
+Extracts features from mol2 files. Each unique tungsten site is extracted as a feature, names as a combination of its compound refcode and atom id.
 
 #### Presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
 
