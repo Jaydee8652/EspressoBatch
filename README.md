@@ -140,7 +140,7 @@ On the first run this script will create 'qe_params.csv' with default settings. 
 
  - test_time (default: 10)
 > Time taken for a test calculation to complete (in seconds). 
-> Used to estimate the amount of time creating a series of input files will take. Slightly varies with calculation difficulty.
+> Used to estimate the amount of time creating a series of input files will take. Slightly varies with calculation difficulty and may need to be adjusted if process times out.
 
  -  ecutwfc (default: 55.0)
 > *Default quantumespresso parameter
