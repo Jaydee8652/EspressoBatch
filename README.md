@@ -212,7 +212,7 @@ The following scripts allpw for machine learning analysis of tungsten pentacarbo
 ```
 python3 extract_features.py
 ```
-Extracts features from mol2 files. Each unique tungsten site is extracted as a feature, names as a combination of its compound refcode and atom id.
+Extracts features from .mol2 files. Each unique tungsten site is extracted as a feature, names as a combination of its compound refcode and atom id.
 
 #### Presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
 
