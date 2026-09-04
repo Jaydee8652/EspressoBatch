@@ -217,7 +217,7 @@ Extracts features from .mol2 files. Each unique tungsten site is extracted as a 
 #### Presents the user with 2 processes to run. Any combination of these processes can be run through an integer input.
 
  - 1:  Extract feature data from calculations
-> Extracts features from .mol2 and summary files from a specified set of calculations and saves them to '_experimental_feature_data.csv'
+> Extracts features from .mol2 and summary files from a specified set of calculations and saves them to '_training_feature_data.csv'
 > Default set is 'MAIN', can be altered by changing 'set_id' in 'extract_features.py'
 
 
@@ -230,5 +230,43 @@ Extracts features from .mol2 files. Each unique tungsten site is extracted as a 
 
  - 0:  "Speed dial" for all processes in sequence
 
-A list of all extracted features can be found at 'utils/data/feature_names.csv'. C5 is defined as the C within 
+A list of all extracted features can be found at 'utils/data/feature_names.csv'. C5 is defined as the Carbin opposite to the Phosphorous. C1 and C2 will be opposite to one another, same with C3 and C4.
  
+ ## create_model.py
+```
+python3 create_model.py
+```
+#### Asks the user for a string input as the name of the model
+
+Submits a job running 'utils/train_model.py' to slurm, creates a gradient boosting regressor model in 'models' from the available features in '_training_feature_data.png'.
+Train test split of 0.8/0.2. Uses the optuna library to perform hyperparameter tuning.
+
+Parameters of the model can be altered in 'utils/train_model.py' by changing the following parameters:
+
+ -  predictP (default: True)
+> If 'True' the model will be trained to predict Phosphorous shielding values.
+> If 'False' the model will be trained to predict Tungsten shielding values.
+
+ -  n_trials (default: 100)
+> The number of optuna trials performed.
+> Each trial has different parameters within a defined parameter space.
+> Observed diminishing returns above 100
+
+ -  n_states (default: 100)
+> The number of seeds on which the model is run. The output of all run seeds is averaged.
+> Seed influences the train test split and the regressor itself
+> Observed diminishing returns above 100
+
+ -  n_repeats (default: 150)
+> Number of permutations for feature importance testing
+
+ -  datapoint_cap (default: 10000)
+> Cap on number of datapoints used by the model, includes train and test.
+
+ -  consider ()
+> List of features the model should use. A list of all extracted features can be found at 'utils/data/feature_names.csv'.
+
+- multiregressor (default: False)
+> Should the model be trained on shielding eigenvalues rather than shielding values. Plotting of data is not supported.
+
+
