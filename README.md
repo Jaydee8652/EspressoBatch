@@ -106,7 +106,7 @@ sequentually within a job. If calculations are particularly demanding, or speed 
 more slurm jobs.
 
 > All calculations will be batched at once, regardless of group size as long as the number of jobs requested does not exceed 16.
-Automatcially logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
+Automatically logs which calculations have been batched in 'Sanity_Input_Files/sanity_sheet.csv' and will not repeat work.
 > Summary files are produced at the end of each calculation by 'extract_energy.py'.
 > The final energy is saved to 'Sanity_Input_Files/sanity_sheet.csv' in Ry and kJ mol⁻¹ molecule⁻¹. 
 
